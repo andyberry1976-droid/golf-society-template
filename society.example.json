@@ -1,0 +1,14 @@
+{
+  "society_name": "The Example Golf Society",
+  "short_name": "Example GS",
+  "slug": "example-gs",
+  "domain": "example-golf.example",
+  "admin_email": "captain@example-golf.example",
+  "colors": { "primary": "#225588", "primary_dark": "#123355", "accent": "#e0a100" },
+  "logo": null,
+  "features": { "fantasy": false, "ryder": false, "subs": true, "birthdays": true },
+  "competition_presets": ["stableford", "medal_net", "texas_scramble", "better_ball", "matchplay"],
+  "season_start_year": 2026,
+  "handicap_mode": "whs",
+  "members_csv": null
+}
