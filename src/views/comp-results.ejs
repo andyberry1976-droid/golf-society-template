@@ -1,0 +1,7 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: type.name, heading: ev.title, lead: ev.event_date + (ev.course ? ' · ' + ev.course : ''), doodle: 's-tee'}) %>
+<div class="page-body"><div class="wrap lift stack"><section class="card">
+<% if (!results.length) { %><p>No results yet.</p><% } else { %><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Pos</th><th>Player</th><th>PH</th><th>Gross</th><th>Net</th><th>Stableford</th><th>Points</th><th></th></tr></thead><tbody>
+<% results.forEach(function (r) { %><tr><td data-l="Pos"><%= r.position || '–' %></td><td data-l="Player"><a href="/players/<%= r.user_id %>"><%= r.name %></a></td><td data-l="PH"><%= r.playing_handicap ?? '' %></td><td data-l="Gross"><%= r.gross ?? '' %></td><td data-l="Net"><%= r.net ?? '' %></td><td data-l="Stableford"><%= r.stableford ?? '' %></td><td data-l="Points"><b><%= r.points %></b></td><td><%= r.detail || '' %></td></tr><% }) %>
+</tbody></table></div><% } %></section></div></div>
+<%- include('partials/foot') %>

@@ -1,0 +1,17 @@
+<%- include('_top') %>
+<section class="card"><h2><%= ev.title %> · <%= type.name %></h2>
+<p><%= ev.event_date %> · format <b><%= cfg.format %></b><%= cfg.team ? ', ' + cfg.team.type + ' teams of ' + cfg.team.size : '' %>, allowance <%= cfg.allowance.pct %>%.</p>
+<p class="muted">Each player: <b>either</b> 18 hole scores (comma separated, <code>-</code> = no return) <b>or</b> a gross / Stableford total. Team / match number groups players for team formats and matchplay. Leave blank if they didn't play.</p>
+<% if (error) { %><p class="badge bad"><%= error %></p><% } %>
+<form method="post" action="/admin/engine/events/<%= ev.id %>/scores"><%- include('../partials/csrf') %>
+<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>Index</th><th>Team / match</th><th>Hole by hole</th><th>Gross</th><th>Stableford</th><th>Birdies</th><th>Position</th></tr></thead><tbody>
+<% members.forEach(function (m) { var s = sc.get(m.id) || {}; %><tr><td data-l="Player"><%= m.name %></td>
+<td data-l="Index"><input class="in" name="hcp_<%= m.id %>" size="4" value="<%= s.hcp_index != null ? s.hcp_index : (m.handicap_index ?? '') %>"></td>
+<td data-l="Team"><input class="in" name="team_<%= m.id %>" size="3" value="<%= s.team_no ?? '' %>"></td>
+<td data-l="Holes"><input class="in" name="holes_<%= m.id %>" size="36" value="<%= s.holes ? JSON.parse(s.holes).map(function (x) { return x == null ? '-' : x; }).join(',') : '' %>"></td>
+<td data-l="Gross"><input class="in" name="gross_<%= m.id %>" size="4" value="<%= s.gross_total ?? '' %>"></td>
+<td data-l="Stableford"><input class="in" name="stableford_<%= m.id %>" size="4" value="<%= s.stableford_total ?? '' %>"></td>
+<td data-l="Birdies"><input class="in" name="birdies_<%= m.id %>" size="3" value="<%= s.birdies ?? '' %>"></td>
+<td data-l="Position"><input class="in" name="position_<%= m.id %>" size="3" value="<%= s.position_in ?? '' %>"></td></tr><% }) %>
+</tbody></table></div><button class="btn btn-yl" type="submit">Save scores &amp; calculate</button></form></section>
+<%- include('_bot') %>

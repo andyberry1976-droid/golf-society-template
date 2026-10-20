@@ -1,0 +1,9 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Results', heading: L ? L.league.name : 'Leagues', lead: L ? (L.events.length + ' event(s) count' + (L.cfg.bestN ? ', best ' + L.cfg.bestN + ' scores' : '')) : 'Season-long tables for custom competitions.', doodle: 's-spark'}) %>
+<div class="page-body"><div class="wrap lift stack"><section class="card">
+<% if (!L) { %><% if (!leagues.length) { %><p>No leagues yet.</p><% } %><ul><% leagues.forEach(function (l) { %><li><a href="/leagues/<%= l.id %>"><%= l.name %></a></li><% }) %></ul>
+<% } else { %><div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Player</th><th>Played</th><th>Points</th></tr></thead><tbody>
+<% L.rows.forEach(function (r, i) { %><tr><td data-l="#"><%= i + 1 %></td><td data-l="Player"><a href="/players/<%= r.user %>"><%= r.name %></a></td><td data-l="Played"><%= r.played %></td><td data-l="Points"><b><%= r.total %></b></td></tr><% }) %></tbody></table></div>
+<p><% L.events.forEach(function (e) { %><a class="badge" href="/comp-results/<%= e.id %>"><%= e.event_date %> <%= e.title %></a> <% }) %></p><% } %>
+</section></div></div>
+<%- include('partials/foot') %>

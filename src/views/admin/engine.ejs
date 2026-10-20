@@ -1,0 +1,26 @@
+<%- include('_top') %>
+<section class="card"><h2>Custom competitions</h2>
+  <p>Pick any event and give it a competition type (built under <a href="/admin/competition-types">Competition types</a> from presets). Scores can be hole by hole or round totals; results are stored with a copy of the rules used.</p>
+  <form class="form" method="post" action="/admin/engine/link"><%- include('../partials/csrf') %>
+    <div class="cols2"><div class="fld"><label>Event</label><select class="in" name="event_id"><% events.forEach(function (e) { %><option value="<%= e.id %>"><%= e.event_date %> · <%= e.title %><%= e.type_name ? ' (' + e.type_name + ')' : '' %></option><% }) %></select></div>
+    <div class="fld"><label>Competition type</label><select class="in" name="competition_type_id"><option value="">None (use the standard scoring)</option><% types.forEach(function (t) { %><option value="<%= t.id %>"><%= t.name %></option><% }) %></select></div></div>
+    <button class="btn btn-yl" type="submit">Save &amp; enter scores</button></form>
+  <ul><% events.filter(function (e) { return e.type_name; }).forEach(function (e) { %><li><%= e.event_date %> <%= e.title %> <span class="badge"><%= e.type_name %></span> · <a href="/admin/engine/events/<%= e.id %>">Enter scores</a> · <a href="/comp-results/<%= e.id %>">Results</a></li><% }) %></ul>
+</section>
+<section class="card" id="leagues"><h2>Leagues</h2>
+  <ul><% leagues.forEach(function (l) { %><li><a href="/leagues/<%= l.id %>"><%= l.name %></a><%= l.season ? ' · ' + l.season : '' %>
+    <form class="inline-form" method="post" action="/admin/leagues/<%= l.id %>/delete" data-confirm="Delete this league? Results are kept."><%- include('../partials/csrf') %><button class="btn btn-sm btn-wh" type="submit">Delete</button></form></li><% }) %></ul>
+  <form class="form" method="post" action="/admin/leagues"><%- include('../partials/csrf') %>
+    <div class="cols2"><div class="fld"><label>Name</label><input class="in" name="name" required></div>
+    <div class="fld"><label>Season</label><select class="in" name="season_id"><option value="">All seasons</option><% seasons.forEach(function (s) { %><option value="<%= s.id %>"><%= s.name %></option><% }) %></select></div></div>
+    <fieldset><legend>Counts these competition types (none ticked = all)</legend><% types.forEach(function (t) { %><label class="chk"><input type="checkbox" name="types" value="<%= t.id %>"> <%= t.name %></label><% }) %></fieldset>
+    <div class="fld"><label>Best N scores count (blank = all)</label><input class="in" name="bestN" inputmode="numeric"></div>
+    <button class="btn btn-yl" type="submit">Add league</button></form>
+</section>
+<section class="card" id="courses"><h2>Hole-by-hole course cards</h2><p>Needed for hole-by-hole scoring, countback, better-ball and matchplay. 18 pars and 18 stroke indexes (1–18).</p>
+  <% courses.forEach(function (c) { var h = c.holes ? JSON.parse(c.holes) : null; %>
+  <form class="form" method="post" action="/admin/engine/courses/<%= c.id %>/holes"><%- include('../partials/csrf') %><h3><%= c.name %> <%= c.tee || '' %></h3>
+    <div class="cols2"><div class="fld"><label>Pars</label><input class="in" name="pars" value="<%= h ? h.map(function (x) { return x.par; }).join(',') : '' %>"></div><div class="fld"><label>Stroke indexes</label><input class="in" name="sis" value="<%= h ? h.map(function (x) { return x.si; }).join(',') : '' %>"></div></div>
+    <button class="btn btn-sm" type="submit">Save card</button></form><% }) %>
+</section>
+<%- include('_bot') %>
