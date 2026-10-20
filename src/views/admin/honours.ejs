@@ -1,0 +1,24 @@
+<%- include('_top') %>
+<section class="card"><h2>How the roll of honour fills itself</h2><p style="margin-top:8px;font-weight:700">Link an event to a trophy on the event form and its winner is added automatically when you save results. Closing a season adds the Order of Merit champion. Use the form below for <b>historic winners</b> from before you started using the app.</p></section>
+<div class="two-col">
+<form class="card form" method="post" action="/admin/honours" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a historic winner</h2>
+  <div class="cols2"><div class="fld"><label for="h-c">Trophy</label><select class="in" id="h-c" name="category_id"><% categories.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %></option><% }) %></select></div><div class="fld"><label for="h-y">Year</label><input class="in" id="h-y" name="year" inputmode="numeric" required value="<%= new Date().getFullYear() - 1 %>"></div></div>
+  <div class="cols2"><div class="fld"><label for="h-u">Winner</label><select class="in" id="h-u" name="user_id"><option value="">— unknown / TBD —</option><% members.forEach(function(m){ %><option value="<%= m.id %>"><%= m.name %></option><% }) %></select></div>
+  <div class="fld"><label for="h-p">Partner (pairs only)</label><select class="in" id="h-p" name="partner_id"><option value="">—</option><% members.forEach(function(m){ %><option value="<%= m.id %>"><%= m.name %></option><% }) %></select></div></div>
+  <div class="fld"><label for="h-d">Result</label><input class="in" id="h-d" name="detail" maxlength="100" placeholder="e.g. 43 pts, or 3 &amp; 2"></div>
+  <button class="btn btn-pk" type="submit">Add to roll of honour</button>
+</form>
+<div class="stack">
+<form class="card form" method="post" action="/admin/honours/categories" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a trophy</h2>
+  <div class="fld"><label for="c-n">Name</label><input class="in" id="c-n" name="name" required maxlength="60" placeholder="e.g. Presidents Putter"></div>
+  <div class="fld"><label for="c-k">Kind</label><select class="in" id="c-k" name="kind"><option value="event">Event winner (link events to it)</option><option value="oom">Order of Merit champion</option><option value="other">Other (manual entries only)</option></select></div>
+  <button class="btn btn-wh btn-sm" type="submit">Add trophy</button>
+  <p class="hint" style="margin:0">Current trophies: <%= categories.map(function(c){return c.name}).join(', ') %></p>
+</form></div></div>
+<section class="card" style="padding:8px 10px 12px"><h2 style="padding:8px 8px 0">All entries</h2>
+<table class="rt"><thead><tr><th>Year</th><th>Trophy</th><th>Winner</th><th>Result</th><th>Source</th><th></th></tr></thead><tbody>
+<% rows.forEach(function(h){ %><tr><td class="first" data-l="Year"><b><%= h.year %></b></td><td data-l="Trophy"><%= h.cat %></td><td data-l="Winner"><%= h.uname || 'TBD' %><%= h.pname ? ' & ' + h.pname : '' %></td><td data-l="Result"><%= h.detail || '' %></td><td data-l="Source"><span class="badge <%= h.source==='auto' ? 'ok' : '' %>"><%= h.source %></span></td>
+<td class="r"><% if (h.source==='manual') { %><form method="post" action="/admin/honours/<%= h.id %>/delete" class="inline-form" data-confirm="Remove this entry?"><%- include('../partials/csrf') %><button class="mini-btn" aria-label="Remove <%= h.year %> <%= h.cat %>">✕</button></form><% } %></td></tr><% }) %></tbody></table></section>
+<%- include('_bot') %>

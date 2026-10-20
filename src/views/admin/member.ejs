@@ -1,0 +1,49 @@
+<%- include('_top') %>
+<p style="margin-bottom:18px"><a class="btn-link" href="/admin/members">← All members</a> · <a class="btn-link" href="/players/<%= m.id %>">Public profile</a></p>
+<div class="two-col">
+<div class="stack">
+<form class="card form" method="post" action="/admin/members/<%= m.id %>" novalidate><%- include('../partials/csrf') %>
+  <h2>Details &amp; role</h2>
+  <%- include('../partials/field', {name:'name', label:'Name', values: values, errors: errors, attrs:'required'}) %>
+  <%- include('../partials/field', {name:'email', label:'Email', type:'email', values: values, errors: errors, attrs:'required'}) %>
+  <div class="cols2"><%- include('../partials/field', {name:'nickname', label:'Nickname', values: values, errors: errors}) %><%- include('../partials/field', {name:'home_course', label:'Home course', values: values, errors: errors}) %></div>
+  <div class="cols2">
+    <div class="fld"><label for="f-role">Role</label><select class="in" id="f-role" name="role"><% ['member','captain','admin'].forEach(function(r){ %><option value="<%= r %>"<%= values.role===r ? ' selected' : '' %>><%= roleLabel(r) %></option><% }) %></select>
+      <% if (errors.role) { %><p class="ferr" role="alert"><%= errors.role %></p><% } %>
+      <p class="hint">Captains can run events &amp; results. Admins can do everything.</p></div>
+    <div class="fld"><label for="f-status">Status</label><select class="in" id="f-status" name="status"><option value="active"<%= values.status==='active' ? ' selected' : '' %>>Active</option><option value="disabled"<%= values.status==='disabled' ? ' selected' : '' %>>Disabled (can’t log in, hidden)</option></select></div>
+  </div>
+  <%- include('../partials/field', {name:'date_of_birth', label:'Birthday (optional)', values: values, errors: errors, hint:'Day and month, e.g. 17 Oct. Add the year only if known (17/10/1976): it stays admin-only, the site only ever shows the day and month.'}) %>
+  <h2 style="margin-top:12px">Society record</h2>
+  <%- include('../partials/field', {name:'achievements', label:'Achievements code', values: values, errors: errors, hint:'Comma separated: HIOC (or HIOC2) hole-in-one club, * Major, £ Order of Merit, € European Open, M Matchplay, F FedEx. Repeat or prefix a number for multiples, e.g. HIOC2, ***, ££, 4M'}) %>
+  <div class="cols2"><%- include('../partials/field', {name:'lowest_index', label:'Lowest ever handicap', values: values, errors: errors, attrs:'inputmode="decimal"'}) %>
+  <div class="fld"><label class="chk" style="margin-top:28px"><input type="checkbox" name="subs_paid" value="1"<%= String(values.subs_paid)==='1' ? ' checked' : '' %>> Subs paid (£20) — admins only</label></div></div>
+  <button class="btn btn-pk" type="submit">Save member</button>
+</form>
+<form class="card form" method="post" action="/admin/members/<%= m.id %>/password" novalidate><%- include('../partials/csrf') %>
+  <h2>Reset password</h2>
+  <%- include('../partials/field', {name:'password', label:'New temporary password', type:'password', values: {}, errors: {}, autocomplete:'new-password', hint:'Min 10 characters. Tell them privately.', attrs:'required minlength="10"'}) %>
+  <button class="btn btn-wh" type="submit">Reset password</button>
+</form>
+</div>
+<div class="stack">
+<section class="card"><h2>Handicap: <%= fmtIdx(m.handicap_index) %></h2>
+  <form class="form" method="post" action="/admin/members/<%= m.id %>/handicap" style="margin-top:12px"><%- include('../partials/csrf') %>
+    <div class="cols2"><div class="fld"><label for="h-idx"><%= hcpFixed ? 'New handicap' : 'Set index to' %></label><input class="in" id="h-idx" name="index" inputmode="decimal" required placeholder="e.g. 14.2"></div>
+    <div class="fld"><label for="h-note">Reason</label><input class="in" id="h-note" name="note" maxlength="120" placeholder="e.g. Imported from old club card"></div></div>
+    <button class="btn btn-yl btn-sm" type="submit"><%= hcpFixed ? 'Set handicap' : 'Override handicap' %></button>
+    <p class="hint" style="margin:0"><% if (hcpFixed) { %>This is the handicap they play off on every course until you change it. Each change is kept in their handicap history and the audit log.<% } else { %>A manual override becomes the new baseline; later results adjust it automatically (once 3+ rounds are on record the WHS calculation takes over).<% } %></p>
+  </form></section>
+<% if (!hcpFixed) { %><form class="card form" method="post" action="/admin/members/<%= m.id %>/extra-round" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a general-play round</h2><p class="hint" style="margin:0">A counting round played outside society events (e.g. a supplementary card).</p>
+  <div class="cols2"><div class="fld"><label for="x-d">Date</label><input class="in" id="x-d" type="date" name="played_on" required></div><div class="fld"><label for="x-c">Course</label><input class="in" id="x-c" name="course_name" required maxlength="80"></div></div>
+  <div class="cols2"><div class="fld"><label for="x-a">Adjusted gross</label><input class="in" id="x-a" name="ags" inputmode="numeric" required></div><div class="fld"><label for="x-p">Par</label><input class="in" id="x-p" name="par" inputmode="numeric" required value="72"></div></div>
+  <div class="cols2"><div class="fld"><label for="x-r">Course rating</label><input class="in" id="x-r" name="rating" inputmode="decimal" required value="72.0"></div><div class="fld"><label for="x-s">Slope</label><input class="in" id="x-s" name="slope" inputmode="numeric" required value="113"></div></div>
+  <button class="btn btn-wh btn-sm" type="submit">Add round</button>
+  <% if (extras.length) { %><ul class="sm muted"><% extras.forEach(function(x){ %><li><%= x.played_on %> · <%= x.course_name %> · <%= x.ags %></li><% }) %></ul><% } %>
+</form><% } %>
+<section class="card"><h2>Recent handicap changes</h2>
+<table class="rt" style="margin-top:8px"><thead><tr><th>Date</th><th>What</th><% if (!hcpFixed) { %><th>Diff</th><% } %><th><%= hcpFixed ? 'Handicap' : 'Index' %></th></tr></thead><tbody>
+<% history.forEach(function(h){ %><tr><td class="first" data-l="Date"><%= h.effective_on %></td><td data-l="What"><%= h.label || h.source %></td><% if (!hcpFixed) { %><td data-l="Diff"><%= h.differential!=null ? h.differential.toFixed(1) : '—' %></td><% } %><td data-l="Index"><b><%= h.index_after.toFixed(1) %></b></td></tr><% }) %></tbody></table></section>
+</div></div>
+<%- include('_bot') %>

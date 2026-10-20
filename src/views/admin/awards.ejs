@@ -1,0 +1,38 @@
+<%- include('_top') %>
+<form method="get" action="/admin/awards" class="card" style="margin-bottom:22px"><div class="fld" style="max-width:360px"><label for="season">Season</label><select class="in" id="season" name="season" data-autosubmit><% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= sel && sel.id===s.id ? ' selected' : '' %>><%= s.name %></option><% }) %></select></div><noscript><button class="btn btn-yl btn-sm" style="margin-top:10px">Go</button></noscript></form>
+<div class="two-col">
+<div class="stack">
+<form class="card form" method="post" action="/admin/awards/grants" novalidate><%- include('../partials/csrf') %>
+  <h2>Give an award <%= sel ? '· ' + sel.name : '' %></h2>
+  <input type="hidden" name="season_id" value="<%= sel ? sel.id : '' %>">
+  <div class="fld"><label for="g-t">Award</label><select class="in" id="g-t" name="award_type_id"><% types.forEach(function(t){ %><option value="<%= t.id %>"><%= t.name %></option><% }) %></select></div>
+  <div class="fld"><label for="g-u">Winner</label><select class="in" id="g-u" name="user_id"><% members.forEach(function(m){ %><option value="<%= m.id %>"><%= m.name %></option><% }) %></select></div>
+  <div class="fld"><label for="g-c">Citation (the funny bit)</label><textarea class="in" id="g-c" name="citation" maxlength="240" placeholder="Blamed the wind, the greens, the grass and a passing pigeon."></textarea></div>
+  <button class="btn btn-pk" type="submit">Give award</button>
+  <% const names = Object.keys(suggestions); if (names.length) { %><div><p class="lbl">Suggestions from the numbers</p>
+    <% if (suggestions.wooden_spoon) { %><p class="sugg">🥄 Wooden Spoon: <%= suggestions.wooden_spoon.text %></p><% } %>
+    <% if (suggestions.sandbagger) { %><p class="sugg">🏖️ Sandbagger: <%= suggestions.sandbagger.text %></p><% } %>
+    <% if (suggestions.consistency) { %><p class="sugg">📏 Mr Consistency: <%= suggestions.consistency.text %></p><% } %>
+    <% if (suggestions.most_improved) { %><p class="sugg">📈 Comeback Kid: <%= suggestions.most_improved.text %></p><% } %></div><% } %>
+</form>
+<section class="card"><h2>Given this season</h2>
+  <% if (grants.length) { %><table class="rt" style="margin-top:8px"><thead><tr><th>Award</th><th>Winner</th><th></th></tr></thead><tbody>
+  <% grants.forEach(function(g){ %><tr><td class="first" data-l="Award"><b><%= g.tname %></b></td><td data-l="Winner"><%= g.uname %></td><td class="r"><form method="post" action="/admin/awards/grants/<%= g.id %>/delete" class="inline-form"><%- include('../partials/csrf') %><button class="btn btn-dn btn-sm" type="submit" aria-label="Remove <%= g.tname %> from <%= g.uname %>">Remove</button></form></td></tr><% }) %></tbody></table>
+  <% } else { %><p style="margin-top:8px;font-weight:700">No awards given for this season yet.</p><% } %></section>
+</div>
+<div class="stack">
+<section class="card"><h2>Award types</h2>
+  <ul style="margin-top:12px;display:grid;gap:10px"><% types.forEach(function(t){ %><li class="status-box row-between"><span><%- iconHtml(t.icon, "width:1.4em;height:1.4em") %> <b><%= t.name %></b><% if (t.description) { %><br><span class="muted sm"><%= t.description %></span><% } %></span>
+    <% if (isAdmin) { %><form method="post" action="/admin/awards/types/<%= t.id %>/delete" class="inline-form" data-confirm="Delete this award type and every time it was given?"><%- include('../partials/csrf') %><button class="mini-btn" aria-label="Delete award type <%= t.name %>">✕</button></form><% } %></li><% }) %></ul></section>
+<form class="card form" method="post" action="/admin/awards/types" novalidate><%- include('../partials/csrf') %>
+  <h2>Create a new award</h2>
+  <div class="fld"><label for="t-n">Name</label><input class="in" id="t-n" name="name" required maxlength="60" placeholder="e.g. Best Dressed"></div>
+  <div class="fld"><label for="t-d">Description</label><input class="in" id="t-d" name="description" maxlength="200"></div>
+  <div class="cols2"><div class="fld"><label for="t-i">Icon</label><select class="in" id="t-i" name="icon"><% icons.forEach(function(i){ %><option value="<%= i %>"><%= i.replace('s-','') %></option><% }) %></select></div>
+  <div class="fld"><label for="t-e">…or an emoji (optional, replaces the icon)</label><input class="in" id="t-e" name="emoji" maxlength="16" placeholder="e.g. 🐌"></div>
+  <div class="fld"><label for="t-t">Colour</label><select class="in" id="t-t" name="tint"><% tints.forEach(function(c, i){ %><option value="<%= c %>">Tint <%= i+1 %> (<%= c %>)</option><% }) %></select></div></div>
+  <div class="fld"><label for="t-r">Suggest winners using…</label><select class="in" id="t-r" name="rule"><option value="">Nothing (hand-picked)</option><option value="wooden_spoon">Fewest Order of Merit points</option><option value="sandbagger">Highest average stableford</option><option value="consistency">Most consistent scores</option><option value="most_improved">Biggest handicap drop</option></select></div>
+  <button class="btn btn-pk" type="submit">Create award</button>
+</form>
+</div></div>
+<%- include('_bot') %>

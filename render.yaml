@@ -1,0 +1,25 @@
+# Free Render web service. Data lives in Postgres (Supabase free) when DATABASE_URL is set:
+# the app loads it on start, seeds the site data only if Postgres is empty, and saves every change back.
+# Without DATABASE_URL it still starts, on local SQLite (wiped whenever Render restarts the service).
+services:
+  - type: web
+    name: golf-society
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      # development keeps the demo logins working (production refuses to start while admins use the demo password)
+      - key: NODE_ENV
+        value: development
+      - key: TRUST_PROXY
+        value: "1"
+      - key: NODE_VERSION
+        value: "20"
+      # Supabase connection string (Session pooler URI). Enter it in the Render dashboard; never commit it.
+      - key: DATABASE_URL
+        sync: false
+      # stable secret so logins survive restarts
+      - key: SESSION_SECRET
+        generateValue: true

@@ -1,0 +1,187 @@
+[
+ {
+  "slug": "2025-walls-50th-texas-scramble",
+  "year": 2025,
+  "title": "Sample Texas Scramble",
+  "course": "Willow Lakes",
+  "event_date": null,
+  "format": "Scramble stroke play (net)",
+  "results": [
+   {
+    "position": 1,
+    "team": "Team Legends",
+    "hcp": 11,
+    "score": 53,
+    "to_par": -18,
+    "players": [
+     {
+      "name": "Admin",
+      "hcp": 9
+     },
+     {
+      "name": "Player 17",
+      "hcp": 17
+     },
+     {
+      "name": "Player 13",
+      "hcp": 20
+     },
+     {
+      "name": "Player 33",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 2,
+    "team": "Team Two",
+    "hcp": null,
+    "score": 53,
+    "to_par": -18,
+    "players": [
+     {
+      "name": "Player 90",
+      "hcp": 7
+     },
+     {
+      "name": "Player 7",
+      "hcp": 10
+     },
+     {
+      "name": "Player 20",
+      "hcp": 28
+     },
+     {
+      "name": "Player 31",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 2,
+    "team": "Team Four",
+    "hcp": 11,
+    "score": 54,
+    "to_par": -17,
+    "players": [
+     {
+      "name": "Player 8",
+      "hcp": 8
+     },
+     {
+      "name": "Player 15",
+      "hcp": 18
+     },
+     {
+      "name": "Player 8",
+      "hcp": 20
+     },
+     {
+      "name": "Player 88",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 4,
+    "team": "Team Loaded",
+    "hcp": 12,
+    "score": 57,
+    "to_par": -14,
+    "players": [
+     {
+      "name": "Player 91",
+      "hcp": 9
+     },
+     {
+      "name": "Player 18",
+      "hcp": 18
+     },
+     {
+      "name": "Player 22",
+      "hcp": 28
+     },
+     {
+      "name": "Player 36",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 5,
+    "team": "Team Three",
+    "hcp": 10,
+    "score": 57,
+    "to_par": -14,
+    "players": [
+     {
+      "name": "Player 5",
+      "hcp": 9
+     },
+     {
+      "name": "Player 6",
+      "hcp": 10
+     },
+     {
+      "name": "Player 1",
+      "hcp": 22
+     },
+     {
+      "name": "Player 30",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 5,
+    "team": "Team Five",
+    "hcp": 11,
+    "score": 56,
+    "to_par": -15,
+    "players": [
+     {
+      "name": "Player 4",
+      "hcp": 8
+     },
+     {
+      "name": "Player 16",
+      "hcp": 15
+     },
+     {
+      "name": "Player 21",
+      "hcp": 22
+     },
+     {
+      "name": "Player 37",
+      "hcp": 28
+     }
+    ]
+   },
+   {
+    "position": 7,
+    "team": "Team Six",
+    "hcp": 11,
+    "score": 58,
+    "to_par": -13,
+    "players": [
+     {
+      "name": "Player 1",
+      "hcp": 6
+     },
+     {
+      "name": "Player 10",
+      "hcp": 14
+     },
+     {
+      "name": "Player 25",
+      "hcp": 22
+     },
+     {
+      "name": "Player 35",
+      "hcp": 28
+     }
+    ]
+   }
+  ]
+ }
+]

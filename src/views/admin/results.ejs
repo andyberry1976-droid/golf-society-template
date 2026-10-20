@@ -1,0 +1,26 @@
+<%- include('_top') %>
+<p style="margin-bottom:14px"><a class="btn-link" href="/events/<%= e.id %>">← <%= e.title %></a> · <a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/edit#players">Add / remove players</a> <% if (isAdmin) { %><a class="btn btn-wh" href="/admin/events/<%= e.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %> <% if (isAdmin) { %><a class="btn btn-wh" href="/admin/scores/import?event=<%= e.id %>">Import players &amp; scores (Excel)</a><% } %></p>
+<div class="card" style="margin-bottom:22px">
+  <p><b><%= dateLong(e.event_date) %></b> · <%= e.course_name || 'No course set' %><% if (e.course_name) { %> (par <%= e.course_par %><% if (!hcpFixed) { %>, rating <%= e.course_rating %>, slope <%= e.course_slope %><% } %>)<% } %> · <span class="chip <%= e.format_cls %>" style="margin:0"><%= e.format_label %></span></p>
+  <p class="hint" style="margin-top:8px">Winner decided by: <b><%= (e.scoring_basis==='stableford' ? 'stableford points (highest)' : e.scoring_basis==='stroke_net' ? 'net strokes (lowest)' : e.scoring_basis==='stroke_gross' ? 'gross strokes (lowest)' : 'positions you type in') %></b>.
+  Enter <b>gross</b> (we work out net &amp; estimate stableford) or <b>stableford points</b> (we work out the implied adjusted gross). Leave a row blank if the member didn’t play. Position is auto-ranked unless you type one (use it for matchplay, scramble, countbacks).
+  <%= hcpFixed ? 'Handicaps are fixed: these scores do not change anyone’s handicap.' : (e.counts_handicap ? 'These scores will adjust handicaps automatically.' : 'This event does not count for handicap.') %></p>
+</div>
+<form class="card" method="post" action="/admin/events/<%= e.id %>/results" novalidate style="padding:8px 10px 18px"><%- include('../partials/csrf') %>
+  <% if (formError) { %><p class="flash err" role="alert"><%= formError %></p><% } %>
+  <table class="rt rentry"><thead><tr><th>Player</th><th>Index</th><th>Gross</th><th>Adj. gross <span class="sr">(optional)</span></th><th>Stableford</th><th>Position</th><th>Bonus</th><th>Note</th></tr></thead><tbody>
+  <% members.forEach(function(m){ const r = m.res; const sub = submitted && submitted['u'+m.id] ? submitted['u'+m.id] : null;
+     const v = function(k, k2){ return sub ? (sub[k] || '') : (r && r[k2||k] != null ? r[k2||k] : ''); }; %>
+    <tr><td class="first" data-l="Player"><div class="who"><span class="av sm" style="<%= avatarStyle(m.id) %>" aria-hidden="true"><%= initials(m.name) %></span><span><%= m.name %><small><%= m.rsvp==='going' ? '✅ RSVP going' : (m.rsvp==='waitlist' ? '⏳ waitlist' : '') %></small></span></div></td>
+    <td data-l="Index"><%= fmtIdx(m.handicap_index) %></td>
+    <td data-l="Gross"><input class="in" data-score name="rows[u<%= m.id %>][gross]" inputmode="numeric" aria-label="Gross score for <%= m.name %>" value="<%= v('gross') %>"></td>
+    <td data-l="Adj. gross"><input class="in" data-score name="rows[u<%= m.id %>][adjusted_gross]" inputmode="numeric" aria-label="Adjusted gross for <%= m.name %>" value="<%= v('adjusted_gross') %>"></td>
+    <td data-l="Stableford"><input class="in" data-score name="rows[u<%= m.id %>][stableford]" inputmode="numeric" aria-label="Stableford points for <%= m.name %>" value="<%= v('stableford','stableford_in') %>"></td>
+    <td data-l="Position"><input class="in" data-score name="rows[u<%= m.id %>][position]" inputmode="numeric" aria-label="Finishing position for <%= m.name %>" value="<%= v('position','position_in') %>"></td>
+    <td data-l="Bonus pts"><input class="in" name="rows[u<%= m.id %>][bonus]" inputmode="numeric" aria-label="Bonus Order of Merit points for <%= m.name %>" value="<%= sub ? (sub.bonus||'') : (r && r.bonus ? r.bonus : '') %>"></td>
+    <td class="note-c" data-l="Note"><input class="in" name="rows[u<%= m.id %>][note]" maxlength="120" aria-label="Note for <%= m.name %>" placeholder="e.g. 2 &amp; 1" value="<%= sub ? (sub.note||'') : (r && r.note ? r.note : '') %>"></td></tr>
+  <% }) %></tbody></table>
+  <div class="fld" style="margin:18px 8px 0"><label for="hl">Highlights of the day (one per line)</label><textarea class="in" id="hl" name="highlights" maxlength="800" placeholder="Nearest the pin: Callum (6ft 2in)&#10;Birdies on the day: 11"><%= e.highlights || '' %></textarea></div>
+  <div class="actions" style="margin:18px 8px 0"><button class="btn btn-pk" type="submit">Save results &amp; update handicaps</button><a class="btn btn-wh" href="/events/<%= e.id %>">Cancel</a></div>
+</form>
+<%- include('_bot') %>

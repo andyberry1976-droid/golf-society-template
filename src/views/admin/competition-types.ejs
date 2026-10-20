@@ -1,0 +1,28 @@
+<%- include('_top') %>
+<section class="card">
+  <h2>Competition types</h2>
+  <% if (types.length) { %><ul><% types.forEach(function (t) { var c = JSON.parse(t.config); %><li><a href="/admin/competition-types?edit=<%= t.id %>"><%= t.name %></a> <span class="badge"><%= c.format %></span></li><% }) %></ul><% } else { %><p>None yet.</p><% } %>
+  <p>Start from: <% Object.keys(presets).forEach(function (k) { %><a class="btn btn-sm btn-wh" href="/admin/competition-types?preset=<%= k %>"><%= presets[k].label %></a> <% }) %></p>
+</section>
+<section class="card">
+  <h2><%= edit.id ? 'Edit' : 'New' %> competition</h2>
+  <% if (error) { %><p class="badge bad"><%= error %></p><% } %>
+  <% var c = edit.config, bon = function (w) { var b = (c.points.bonuses || []).find(function (x) { return x.when === w || (w === 'stb' && /^stableford>=/.test(x.when)); }); return b ? b.pts : ''; }; %>
+  <form method="post" action="/admin/competition-types"><%- include('../partials/csrf') %>
+    <input type="hidden" name="id" value="<%= edit.id || '' %>"><input type="hidden" name="preset" value="<%= c.preset %>">
+    <label>Name <input name="name" value="<%= edit.name %>" required maxlength="80"></label>
+    <label>Format <select name="format"><% formats.forEach(function (f) { %><option <%= f === c.format ? 'selected' : '' %>><%= f %></option><% }) %></select></label>
+    <label>Handicap allowance % <input type="number" name="allowance_pct" min="0" max="100" value="<%= c.allowance.pct %>"></label>
+    <label><input type="checkbox" name="cap" value="1" <%= c.allowance.cap ? 'checked' : '' %>> Max net double bogey per hole</label>
+    <label><input type="checkbox" name="countback" value="1" <%= c.ranking.tieBreak === 'countback' ? 'checked' : '' %>> Ties: countback (back 9, 6, 3, 1)</label>
+    <label>Scoring <select name="mode"><option value="points" <%= c.points.mode === 'points' ? 'selected' : '' %>>Points by finishing position</option><option value="score" <%= c.points.mode === 'score' ? 'selected' : '' %>>Raw score</option></select></label>
+    <label>Points for 1st, 2nd, 3rd… <input name="positions" value="<%= c.points.positions.join(', ') %>"></label>
+    <label>Points for playing <input type="number" name="participation" value="<%= c.points.participation %>"></label>
+    <label>Bonus for playing <input type="number" name="bonus_played" value="<%= bon('played') %>"></label>
+    <label>Bonus per birdie <input type="number" name="bonus_birdie" value="<%= bon('birdies') %>"></label>
+    <label>Last place (e.g. -5) <input type="number" name="bonus_last" value="<%= bon('last') %>"></label>
+    <label>Bonus for scoring <input type="number" name="bonus_stb_at" value="36" style="width:5em"> + points <input type="number" name="bonus_stb" value="<%= bon('stb') %>"></label>
+    <button class="btn btn-yl" type="submit">Save</button>
+  </form>
+</section>
+<%- include('_bot') %>

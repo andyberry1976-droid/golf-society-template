@@ -1,0 +1,11 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Who won what', heading: 'Roll of honour', lead: 'Every society title, by year. Event winners and the Order of Merit champion are added automatically.', doodle: 's-trophy'}) %>
+<section class="sec hon" style="margin-top:-30px;padding-top:50px"><div class="wrap">
+  <div class="chips wrap-chips" role="group" aria-label="Filter by year">
+    <a class="cp" href="/honours"<%- !yr ? ' aria-current="true"' : '' %>>All years</a>
+    <% years.forEach(function(y){ %><a class="cp" href="/honours?year=<%= y %>"<%- yr===y ? ' aria-current="true"' : '' %>><%= y %></a><% }) %>
+  </div>
+  <div class="hbox"><%- include('partials/hon-table', {rows: rows}) %></div>
+  <% if (open.length) { %><p class="note">Order of Merit for open seasons (<%= open.map(function(s){return s.name}).join(', ') %>) is added when the season is closed.</p><% } %>
+</div></section>
+<%- include('partials/foot') %>

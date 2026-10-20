@@ -1,0 +1,22 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: S.short_name, heading: 'Meet the players', lead: 'Search, sort, and tap a card for the full profile — handicap history, stats and trophies.', doodle: 's-flam'}) %>
+<div class="page-body"><div class="wrap lift">
+  <%- include('partials/season-pick-all', {action: '/players', withAll: true}) %>
+  <form class="search-row card" method="get" action="/players" role="search" aria-label="Find players"><% if (seasons.length > 1) { %><input type="hidden" name="season" value="<%= allSeasons ? 'all' : (season ? season.id : '') %>"><% } %>
+    <div><label for="q" class="lbl">Search players</label><input class="in" id="q" name="q" type="search" value="<%= term %>" placeholder="Name or nickname…" autocomplete="off" maxlength="60"></div>
+    <div class="sortrow"><div><label for="sort" class="lbl">Sort by</label><select class="in" id="sort" name="sort" data-autosubmit>
+      <% [['name','Name'],['hcp','Handicap'],['wins','Wins'],['rounds','Rounds played']].forEach(function(o){ %><option value="<%= o[0] %>"<%= sort===o[0] ? ' selected' : '' %>><%= o[1] %></option><% }) %></select></div>
+      <div><label for="dir" class="lbl">Order</label><select class="in" id="dir" name="dir" data-autosubmit><option value="asc"<%= dir==='asc' ? ' selected' : '' %>>Low → high / A → Z</option><option value="desc"<%= dir==='desc' ? ' selected' : '' %>>High → low / Z → A</option></select></div></div>
+    <button class="btn btn-pk" type="submit">Search</button>
+  </form>
+  <p class="count" aria-live="polite">Showing <%= rows.length %> of <%= total %> players</p>
+  <% if (rows.length) { %><div class="grid">
+    <% rows.forEach(function(p){ %>
+    <a class="pc<%= user && user.id===p.id ? ' mine' : '' %>" href="/players/<%= p.id %>">
+      <span class="av" style="<%= avatarStyle(p.id) %>" aria-hidden="true"><%= initials(p.name) %></span>
+      <span><b><%= p.name %></b><small><%= p.nickname ? '“' + p.nickname + '”' : (p.home_course || ' ') %></small></span>
+      <span class="st"><span class="tag h">HCP <%= fmtIdx(p.handicap_index) %></span><span class="tag"><%= p.rounds %> rounds</span><span class="tag"><%= p.wins %> wins</span><% if (p.role!=='member') { %><span class="tag pk"><%= roleLabel(p.role) %></span><% } %></span>
+    </a><% }) %></div>
+  <% } else { %><p class="empty">No players match “<%= term %>”. Try a shorter search.</p><% } %>
+</div></div>
+<%- include('partials/foot') %>

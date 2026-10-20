@@ -1,0 +1,2 @@
+<%# expects: id, name, nick (optional), size (optional) %>
+<a class="nm" href="/players/<%= id %>"><span class="av <%= typeof size!=='undefined' && size ? size : 'sm' %>" style="<%= avatarStyle(id) %>" aria-hidden="true"><%= initials(name) %></span><span><%= name %><% if (typeof nick !== 'undefined' && nick) { %><small>“<%= nick %>”</small><% } %></span></a>

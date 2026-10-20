@@ -1,0 +1,34 @@
+# Fly.io config — edit `app`, then:  fly launch --no-deploy --copy-config  &&  fly volumes create society_data --size 1 --region lhr
+#   fly secrets set SESSION_SECRET=$(openssl rand -hex 32) ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-passphrase'
+#   fly deploy
+app = "your-golf-society"
+primary_region = "lhr"
+
+[build]
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+  DATABASE_PATH = "/data/society.db"
+  TRUST_PROXY = "1"
+
+[mounts]
+  source = "society_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"     # SQLite + one volume = exactly one always-on machine
+  auto_start_machines = true
+  min_machines_running = 1
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,0 +1,15 @@
+<%- include('_top') %>
+<section class="card"><h2>Fun records</h2><p style="margin-top:8px;font-weight:700">Course records, best stableford, streaks and more are worked out automatically. Use this page for the ones only humans can measure — longest drive, longest putt, most lost balls…</p></section>
+<section class="card"><h2>Current fun records</h2>
+<% if (rows.length) { %><table class="rt" style="margin-top:8px"><thead><tr><th>Record</th><th>Value</th><th>Holder</th><th></th></tr></thead><tbody>
+<% rows.forEach(function(r){ %><tr><td class="first" data-l="Record"><b><%= r.title %></b></td><td data-l="Value"><%= r.value %></td><td data-l="Holder"><%= r.uname || r.holder_text %></td><td class="r"><form method="post" action="/admin/records/<%= r.id %>/delete" class="inline-form" data-confirm="Remove this record?"><%- include('../partials/csrf') %><button class="mini-btn" aria-label="Remove <%= r.title %>">✕</button></form></td></tr><% }) %></tbody></table>
+<% } else { %><p style="margin-top:8px;font-weight:700">None yet.</p><% } %></section>
+<form class="card form" method="post" action="/admin/records" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a record</h2>
+  <div class="cols2"><div class="fld"><label for="r-t">Title</label><input class="in" id="r-t" name="title" required maxlength="60" placeholder="Longest drive"></div><div class="fld"><label for="r-v">Value</label><input class="in" id="r-v" name="value" required maxlength="30" placeholder="312 yds"></div></div>
+  <div class="cols2"><div class="fld"><label for="r-u">Holder (member)</label><select class="in" id="r-u" name="holder_user_id"><option value="">— not a member / type below —</option><% members.forEach(function(m){ %><option value="<%= m.id %>"><%= m.name %></option><% }) %></select></div><div class="fld"><label for="r-h">…or holder name</label><input class="in" id="r-h" name="holder_text" maxlength="60"></div></div>
+  <div class="fld"><label for="r-d">Details</label><input class="in" id="r-d" name="detail" maxlength="160" placeholder="7th at Little Mudwick · downwind"></div>
+  <div class="cols2"><div class="fld"><label for="r-i">Icon</label><select class="in" id="r-i" name="icon"><% icons.forEach(function(i){ %><option value="<%= i %>"><%= i.replace('s-','') %></option><% }) %></select></div><div class="fld"><label for="r-c">Colour</label><select class="in" id="r-c" name="tint"><% tints.forEach(function(c,i){ %><option value="<%= c %>">Tint <%= i+1 %></option><% }) %></select></div></div>
+  <button class="btn btn-pk" type="submit">Add record</button>
+</form>
+<%- include('_bot') %>

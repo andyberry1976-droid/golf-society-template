@@ -1,120 +1,157 @@
 'use strict';
-const express = require('express'); const path = require('path'); const crypto = require('crypto'); const bcrypt = require('bcryptjs');
-const { settings, setSetting } = require('./db'); const { PRESETS, FORMATS, normalise } = require('./lib/scoring/presets'); const { computeEvent, league } = require('./lib/compute');
+const path = require('path');
+const crypto = require('crypto');
+const express = require('express');
+const session = require('express-session');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
+const { getSettings } = require('./db');
+const SqliteStore = require('./lib/session-store');
+const helpers = require('./lib/view-helpers');
+const q = require('./lib/queries');
 
-const HEX = /^#[0-9a-f]{6}$/i;
-function createApp(db) {
+function createApp({ db, config }) {
   const app = express();
-  app.set('view engine', 'ejs'); app.set('views', path.join(__dirname, 'views'));
-  app.use(express.urlencoded({ extended: false, limit: '200kb' }));
-  app.use('/public', express.static(path.join(__dirname, '..', 'public')));
+  app.locals.db = db;
+  app.locals.config = config;
+  app.locals.fence = require('./lib/handover').makeFence();
+  app.set('trust proxy', config.trustProxy);
+  app.set('view engine', 'ejs');
+  app.set('views', path.join(__dirname, 'views'));
+  app.disable('x-powered-by');
+
+  app.use(helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:'], fontSrc: ["'self'"], connectSrc: ["'self'"], formAction: ["'self'"],
+        frameAncestors: ["'none'"], objectSrc: ["'none'"], baseUri: ["'self'"],
+        ...(config.production ? { upgradeInsecureRequests: [] } : {}),
+      },
+    },
+    strictTransportSecurity: config.production,
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  app.use(express.static(path.join(__dirname, '..', 'public'), { maxAge: config.production ? '7d' : 0 }));
+  // this society's own assets (logo …) from sites/<slug>/, never its config or seed data
+  const site = config.site || require('./site').load();
+  app.locals.site = site;
+  app.get(/^\/site\/([a-z0-9._-]+\.(?:svg|png|jpe?g|webp|ico))$/i, (req, res, next) => {
+    const file = path.join(site.dir, path.basename(req.params[0]));
+    if (!require('fs').existsSync(file)) return next();
+    res.set('Cache-Control', config.production ? 'public, max-age=86400' : 'no-cache');
+    res.sendFile(file);
+  });
+  const themeCss = require('./site').themeCss(site);
+  const logoUrl = site.branding && site.branding.logo ? '/site/' + path.basename(site.branding.logo) : null;
+  const logoWordmark = !!(site.branding && site.branding.logo_wordmark && logoUrl);
+  // site.config auth.admin_only: only admins can sign in (no member/captain logins, no join); data is untouched
+  const adminLoginOnly = config.adminLoginOnly != null ? !!config.adminLoginOnly : !!(site.auth && site.auth.admin_only);
+  app.locals.adminLoginOnly = adminLoginOnly;
+  const themeColor = (site.branding && site.branding.theme_color) || '#064e3b';
+  // file uploads (Excel imports) are multipart: parsed here so the CSRF check below sees their _csrf field
+  app.use(['/admin/events/import', '/admin/scores/import'], require('./lib/multipart').upload({ limit: '5mb' }));
+  app.use(require('./lib/handover').fenceMiddleware(app.locals.fence)); // refuses writes while handing over to a new instance
+  app.use(express.urlencoded({ extended: true, limit: '300kb', parameterLimit: 6000 }));
+
+  const store = new SqliteStore(db);
+  app.locals.sessionStore = store;
+  app.use(session({
+    name: 'fs.sid',
+    secret: config.sessionSecret,
+    store,
+    resave: false,
+    saveUninitialized: false,
+    cookie: { httpOnly: true, sameSite: 'lax', secure: config.secureCookies ? 'auto' : false, maxAge: 14 * 24 * 3600 * 1000 },
+  }));
+
+  // ---- per-request context -------------------------------------------------
   app.use((req, res, next) => {
-    res.set({ 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'same-origin' });
-    const sid = (req.headers.cookie || '').match(/(?:^|;\s*)sid=([a-f0-9]{64})/)?.[1];
-    const s = sid && db.prepare('SELECT * FROM sessions WHERE id=? AND expires_at>?').get(sid, Date.now());
-    req.session = s || null; res.locals.admin = !!s; res.locals.csrf = s ? s.csrf : ''; res.locals.site = settings(db);
-    if (req.method === 'POST' && req.path !== '/login' && (!s || req.body._csrf !== s.csrf)) return res.status(403).send('Forbidden');
+    const S = getSettings(db);
+    req.settings = S;
+    let user = null;
+    if (req.session && req.session.userId) {
+      user = db.prepare('SELECT id,name,nickname,email,role,status,handicap_index FROM users WHERE id=?').get(req.session.userId);
+      if (!user || user.status !== 'active' || (adminLoginOnly && user.role !== 'admin')) { user = null; delete req.session.userId; }
+    }
+    req.user = user;
+    req.flash = (type, msg) => { req.session.flash = req.session.flash || []; req.session.flash.push({ type, msg }); };
+    const flash = req.session && req.session.flash ? req.session.flash : [];
+    if (flash.length) delete req.session.flash;
+    let F = require('./lib/features').fromSettings(S);
+    if (adminLoginOnly) { const base = F; const isJoin = (p) => /^\/(join|admin\/requests)(\/|$)/.test(String(p).split(/[?#]/)[0]); F = { on: { ...base.on, join: false }, blocked: (p) => isJoin(p) || base.blocked(p), link: (h) => !isJoin(h) && base.link(h) }; }
+    req.features = F;
+    Object.assign(res.locals, helpers, {
+      reqPath: req.path,
+      S, user, F, flash, adminLoginOnly, h: helpers, themeCss, logoUrl, logoWordmark, themeColor, handicapModules: require('./rules').list().handicap,
+      hcpFixed: !!(require('./rules').HANDICAP[S.handicap_mode] && require('./rules').HANDICAP[S.handicap_mode].manual),
+      hcpLocked: !!(site.rules && site.rules.handicap && site.rules.handicap.locked),
+      cur: S.currency || '£',
+      path: req.path,
+      title: null,
+      active: '',
+      csrf: () => { if (!req.session.csrf) req.session.csrf = crypto.randomBytes(24).toString('hex'); return req.session.csrf; },
+      isStaff: !!user && (user.role === 'admin' || user.role === 'captain'),
+      isAdmin: !!user && user.role === 'admin',
+      unread: user ? db.prepare('SELECT COUNT(*) n FROM notices WHERE user_id=? AND read_at IS NULL').get(user.id).n : 0,
+      pendingCount: user && user.role === 'admin' ? db.prepare("SELECT COUNT(*) n FROM join_requests WHERE status='pending'").get().n : 0,
+      today: q.today(),
+    });
     next();
   });
-  const admin = (req, res, next) => (req.session ? next() : res.redirect('/login'));
-  const W = (fn) => (req, res, next) => { try { fn(req, res, next); } catch (e) { next(e); } };
-  const types = () => db.prepare('SELECT * FROM competition_types WHERE society_id=1 ORDER BY name').all();
-  const int = (v) => (v === '' || v == null || !Number.isFinite(+v) ? null : Math.round(+v));
 
-  // ---- public ----
-  app.get('/', W((req, res) => res.render('home', {
-    upcoming: db.prepare("SELECT e.*, c.name course, t.name type FROM events e LEFT JOIN courses c ON c.id=e.course_id JOIN competition_types t ON t.id=e.competition_type_id WHERE e.status='scheduled' ORDER BY event_date").all(),
-    done: db.prepare("SELECT e.*, t.name type FROM events e JOIN competition_types t ON t.id=e.competition_type_id WHERE e.status='completed' ORDER BY event_date DESC").all(),
-    leagues: db.prepare('SELECT * FROM leagues ORDER BY name').all() })));
-  app.get('/events/:id(\\d+)', W((req, res, next) => {
-    const ev = db.prepare('SELECT e.*, c.name course, t.name type FROM events e LEFT JOIN courses c ON c.id=e.course_id JOIN competition_types t ON t.id=e.competition_type_id WHERE e.id=?').get(req.params.id);
-    if (!ev) return next();
-    res.render('event', { ev, results: db.prepare('SELECT r.*, m.name FROM results r JOIN members m ON m.id=r.member_id WHERE event_id=? ORDER BY position IS NULL, position, m.name').all(ev.id) });
-  }));
-  app.get('/leagues/:id(\\d+)', W((req, res, next) => { if (!db.prepare('SELECT 1 FROM leagues WHERE id=?').get(req.params.id)) return next(); res.render('league', league(db, req.params.id)); }));
+  // ---- CSRF (synchroniser token kept in the session) -------------------------
+  app.use((req, res, next) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    const sent = String((req.body && req.body._csrf) || '');
+    const want = (req.session && req.session.csrf) || '';
+    const ok = sent.length === want.length && want.length > 0 && crypto.timingSafeEqual(Buffer.from(sent), Buffer.from(want));
+    if (!ok) return res.status(403).render('error', { title: 'Session expired', code: 403, message: 'Your form session expired or was invalid. Please go back, refresh the page and try again.' });
+    next();
+  });
 
-  // ---- auth ----
-  app.get('/login', (req, res) => res.render('login', { error: null }));
-  app.post('/login', W((req, res) => {
-    const a = db.prepare('SELECT * FROM admins WHERE email=?').get(String(req.body.email || '').toLowerCase().trim());
-    if (!a || !bcrypt.compareSync(String(req.body.password || ''), a.password_hash)) return res.status(401).render('login', { error: 'Wrong email or password' });
-    const id = crypto.randomBytes(32).toString('hex');
-    db.prepare('INSERT INTO sessions(id,admin_id,csrf,expires_at) VALUES (?,?,?,?)').run(id, a.id, crypto.randomBytes(16).toString('hex'), Date.now() + 7 * 864e5);
-    res.set('Set-Cookie', `sid=${id}; HttpOnly; SameSite=Lax; Path=/${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`).redirect('/admin');
-  }));
-  app.post('/logout', (req, res) => { db.prepare('DELETE FROM sessions WHERE id=?').run(req.session.id); res.set('Set-Cookie', 'sid=; Max-Age=0; Path=/').redirect('/'); });
+  // switched-off modules: 404 (data untouched)
+  app.use((req, res, next) => {
+    if (req.features.blocked(req.path)) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'That part of the site is switched off.' });
+    next();
+  });
 
-  // ---- admin ----
-  const A = express.Router(); A.use(admin); app.use('/admin', A);
-  const page = (res, data) => res.render('admin/index', {
-    types: types(), presets: PRESETS, formats: FORMATS,
-    members: db.prepare('SELECT * FROM members ORDER BY name').all(), courses: db.prepare('SELECT * FROM courses ORDER BY name').all(),
-    events: db.prepare('SELECT e.*, t.name type FROM events e JOIN competition_types t ON t.id=e.competition_type_id ORDER BY event_date DESC').all(),
-    leagues: db.prepare('SELECT * FROM leagues ORDER BY name').all(), edit: null, error: null, ...data });
-  A.get('/', W((req, res) => {
-    const row = req.query.type ? db.prepare('SELECT * FROM competition_types WHERE id=?').get(req.query.type) : null;
-    const preset = PRESETS[req.query.preset] ? req.query.preset : 'stableford';
-    page(res, { edit: row ? { id: row.id, name: row.name, config: JSON.parse(row.config) } : { id: null, name: PRESETS[preset].label, config: normalise({ ...PRESETS[preset], preset }) } });
-  }));
-  A.post('/settings', W((req, res) => {
-    for (const k of ['name', 'tagline', 'logo_url']) if (req.body[k] != null) setSetting(db, k, String(req.body[k]).slice(0, 200));
-    for (const k of ['primary', 'accent']) if (HEX.test(req.body[k] || '')) setSetting(db, k, req.body[k]);
-    res.redirect('/admin');
-  }));
-  A.post('/members', W((req, res) => { const n = String(req.body.name || '').trim(); if (n) db.prepare('INSERT INTO members(name,handicap_index) VALUES (?,?)').run(n.slice(0, 80), +req.body.handicap_index || 28); res.redirect('/admin#members'); }));
-  A.post('/courses', W((req, res) => {
-    const pars = String(req.body.pars || '').split(/[\s,]+/).filter(Boolean).map(Number); const sis = String(req.body.sis || '').split(/[\s,]+/).filter(Boolean).map(Number);
-    const holes = pars.length === 18 && sis.length === 18 ? JSON.stringify(pars.map((p, i) => ({ par: p, si: sis[i] }))) : null;
-    db.prepare('INSERT INTO courses(name,par,rating,slope,holes) VALUES (?,?,?,?,?)').run(String(req.body.name || 'Course').slice(0, 80), holes ? pars.reduce((a, b) => a + b, 0) : int(req.body.par) || 72, +req.body.rating || 72, int(req.body.slope) || 113, holes);
-    res.redirect('/admin#courses');
-  }));
-  A.post('/types', W((req, res) => {
-    const b = req.body; const name = String(b.name || '').trim().slice(0, 80);
-    const cfg = normalise({ preset: b.preset, format: b.format, team: (PRESETS[b.preset] || {}).team ?? null,
-      allowance: { pct: b.allowance_pct, cap: b.cap ? { type: 'net_double_bogey' } : undefined }, ranking: { tieBreak: b.countback ? 'countback' : 'none' },
-      points: { mode: b.mode, positions: String(b.positions || '').split(/[\s,\/]+/).filter(Boolean), participation: b.participation,
-        bonuses: [['played', b.bonus_played], ['birdies', b.bonus_birdie], ['last', b.bonus_last], [`stableford>=${int(b.bonus_stb_at) || 36}`, b.bonus_stb]].filter(([, v]) => int(v)).map(([when, pts]) => ({ when, pts })) } });
-    if (cfg.team && cfg.team.type === 'better_ball') cfg.allowance.difference = undefined;
-    if (b.preset === 'matchplay') cfg.allowance.difference = true;
-    if (!name) return page(res, { edit: { id: b.id || null, name, config: cfg }, error: 'Please give the competition a name' });
-    if (b.id) db.prepare('UPDATE competition_types SET name=?, config=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(name, JSON.stringify(cfg), b.id);
-    else db.prepare('INSERT INTO competition_types(name,config) VALUES (?,?)').run(name, JSON.stringify(cfg));
-    res.redirect('/admin#types');
-  }));
-  A.post('/events', W((req, res) => {
-    const b = req.body; if (!/^\d{4}-\d{2}-\d{2}$/.test(b.event_date || '') || !db.prepare('SELECT 1 FROM competition_types WHERE id=?').get(b.competition_type_id)) return page(res, { error: 'Event needs a date and a competition type' });
-    const id = db.prepare('INSERT INTO events(title,event_date,course_id,competition_type_id,multiplier) VALUES (?,?,?,?,?)').run(String(b.title || 'Event').slice(0, 100), b.event_date, int(b.course_id), +b.competition_type_id, +b.multiplier || 1).lastInsertRowid;
-    res.redirect(`/admin/events/${id}`);
-  }));
-  A.get('/events/:id(\\d+)', W((req, res, next) => {
-    const ev = db.prepare('SELECT e.*, t.name type, t.config FROM events e JOIN competition_types t ON t.id=e.competition_type_id WHERE e.id=?').get(req.params.id); if (!ev) return next();
-    const sc = new Map(db.prepare('SELECT * FROM scores WHERE event_id=?').all(ev.id).map((s) => [s.member_id, s]));
-    res.render('admin/scores', { ev, cfg: JSON.parse(ev.config), members: db.prepare('SELECT * FROM members WHERE active=1 ORDER BY name').all(), sc, error: req.query.error || null });
-  }));
-  A.post('/events/:id(\\d+)/scores', W((req, res) => {
-    const ev = req.params.id; const b = req.body; let bad = null;
-    const up = db.prepare(`INSERT INTO scores(event_id,member_id,team_no,hcp_index,holes,gross_total,stableford_total,birdies,position_in) VALUES (?,?,?,?,?,?,?,?,?)
-      ON CONFLICT(event_id,member_id) DO UPDATE SET team_no=excluded.team_no,hcp_index=excluded.hcp_index,holes=excluded.holes,gross_total=excluded.gross_total,stableford_total=excluded.stableford_total,birdies=excluded.birdies,position_in=excluded.position_in`);
-    db.transaction(() => {
-      db.prepare('DELETE FROM scores WHERE event_id=?').run(ev);
-      for (const m of db.prepare('SELECT id,name FROM members WHERE active=1').all()) {
-        const f = (k) => b[`${k}_${m.id}`]; const holesTxt = String(f('holes') || '').trim();
-        let holes = null;
-        if (holesTxt) { const h = holesTxt.split(/[\s,]+/).map((x) => (x === '-' || x === 'x' ? null : int(x))); if (h.length !== 18 || h.some((x) => x !== null && (x < 1 || x > 20))) { bad = `${m.name}: enter 18 hole scores (use - for no return)`; continue; } holes = JSON.stringify(h); }
-        if (!holes && int(f('gross')) == null && int(f('stableford')) == null && int(f('position')) == null) continue;
-        up.run(ev, m.id, int(f('team')), f('hcp') === '' || f('hcp') == null ? null : +f('hcp'), holes, int(f('gross')), int(f('stableford')), int(f('birdies')), int(f('position')));
-      }
-    })();
-    if (bad) return res.redirect(`/admin/events/${ev}?error=${encodeURIComponent(bad)}`);
-    computeEvent(db, ev); res.redirect(`/events/${ev}`);
-  }));
-  A.post('/leagues', W((req, res) => {
-    const b = req.body; const t = [].concat(b.types || []).map(Number).filter(Boolean);
-    db.prepare('INSERT INTO leagues(name,config) VALUES (?,?)').run(String(b.name || 'League').slice(0, 80), JSON.stringify({ types: t.length ? t : null, events: null, from: b.from || null, to: b.to || null, bestN: int(b.bestN) || null }));
-    res.redirect('/admin#leagues');
-  }));
-  app.use((req, res) => res.status(404).render('message', { title: 'Not found', text: 'That page does not exist.' }));
-  app.use((err, req, res, _n) => { console.error(err); res.status(500).render('message', { title: 'Something went wrong', text: 'Please try again.' }); });
+  // members-only mode
+  app.use((req, res, next) => {
+    if (req.settings.members_only === '1' && !req.user && req.method === 'GET') {
+      const open = req.path === '/' || req.path === '/login' || req.path.startsWith('/join');
+      if (!open) { req.flash('info', 'This society site is for members only. Please log in.'); return res.redirect('/login?next=' + encodeURIComponent(req.originalUrl)); }
+    }
+    next();
+  });
+
+  const limiter = (opts, what) => rateLimit({
+    windowMs: opts.windowMs, limit: opts.limit, standardHeaders: 'draft-7', legacyHeaders: false,
+    skipSuccessfulRequests: what === 'login',
+    handler: (req, res) => res.status(429).render('error', { title: 'Slow down', code: 429, message: 'Too many attempts. Please wait a few minutes and try again.' }),
+  });
+  app.locals.limiters = { login: limiter(config.loginLimit, 'login'), join: limiter(config.joinLimit, 'join') };
+
+  app.use(require('./routes/public'));
+  app.use(require('./routes/comps'));
+  app.use(require('./routes/auth'));
+  app.use(require('./routes/member'));
+  app.use('/admin', require('./routes/admin-comps'));
+  app.use('/admin', require('./routes/admin-engine'));
+  app.use(require('./routes/admin-engine').pub);
+  app.use('/admin', require('./routes/admin'));
+
+  app.use((req, res) => res.status(404).render('error', { title: 'Not found', code: 404, message: "That hole doesn't exist. Try the menu." }));
+  // eslint-disable-next-line no-unused-vars
+  app.use((err, req, res, next) => {
+    if (!config.production || process.env.LOG_ERRORS) console.error(err);
+    else console.error(String(err && err.stack ? err.stack.split('\n')[0] : err));
+    if (res.headersSent) return;
+    res.status(500).render('error', { title: 'Oops', code: 500, message: 'Something went wrong on our side. Please try again.' });
+  });
   return app;
 }
+
 module.exports = { createApp };

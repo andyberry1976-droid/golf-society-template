@@ -1,0 +1,16 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'The small print', heading: 'Rules & handicaps', lead: 'How the society scores, cuts and settles ties.', doodle: 's-flag'}) %>
+<div class="page-body"><div class="wrap lift stack">
+  <section class="card" aria-labelledby="rr"><h2 id="rr">Rules and regulations</h2>
+    <ul class="rules"><% rules.forEach(function(r){ %><li><%= r %></li><% }) %></ul></section>
+  <% if (hcpFixed) { %><section class="card" aria-labelledby="hc"><h2 id="hc">Handicaps</h2>
+    <p style="margin-top:8px;font-weight:700">Every player has one society handicap and plays off it on every course (rounded to the nearest whole number). Results don’t change it automatically: the admin adjusts handicaps by hand, under the society rules above.</p></section>
+  <% } else { %>  <section class="card" aria-labelledby="hc"><h2 id="hc">Society handicap adjustments</h2>
+    <p style="margin-top:8px;font-weight:700">After every counting stableford round: inside the buffer zone (<%= cfg.bufferLow %>–<%= cfg.bufferHigh %> pts) nothing changes. Over <%= cfg.bufferHigh %>, the handicap is cut for every point over, depending on category. Under <%= cfg.bufferLow %>, it goes up <%= cfg.underAdd %>. <%= cfg.fortyPlus %>+ points costs a further <%= cfg.fortyPlusCut %> shot. Winners are cut <%= cfg.monthlyWinCut %> shot in a monthly event with <%= cfg.monthlyMinField %>+ players, and 2 at a Major.</p>
+    <div class="xs" tabindex="0" role="region" aria-label="Handicap categories"><table class="gt cat"><thead><tr><th>Category</th><th>Handicap range</th><th>Buffer zone</th><th>Per point over <%= cfg.bufferHigh %></th><th>Under <%= cfg.bufferLow %></th></tr></thead><tbody>
+    <% var lo = 0; cfg.categories.forEach(function(c){ %><tr><td class="tot"><%= c.cat %></td><td><%= lo %>–<%= c.max >= 54 ? 28 : c.max %></td><td><%= cfg.bufferLow %>–<%= cfg.bufferHigh %></td><td>−<%= c.cut %></td><td>+<%= cfg.underAdd %></td></tr><% lo = c.max + 1; }) %>
+    </tbody></table></div>
+    <p class="hint" style="margin-top:10px">Playing handicap = handicap rounded to the nearest whole number. Category goes by the whole-number part of the handicap. <%= mode === 'whs' ? 'Note: this site is currently set to the WHS-style calculation instead (Admin → Settings).' : 'This is the calculation the site uses (Admin → Settings can switch to a WHS-style calculation).' %></p>
+  </section><% } %>
+</div></div>
+<%- include('partials/foot') %>

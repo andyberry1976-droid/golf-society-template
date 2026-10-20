@@ -1,0 +1,2 @@
+<article class="rc"><span class="ico" style="background:<%= r.tint %>"><%- iconHtml(r.icon, /^s-/.test(r.icon || "s-") ? "width:36px;height:36px" : "font-size:28px") %></span><small><%= r.label %></small><b><%= r.value %></b>
+<div><p><% if (r.holder.id) { %><a href="/players/<%= r.holder.id %>" style="text-decoration:underline"><%= r.holder.name %></a><% } else { %><%= r.holder.name %><% } %></p><p class="meta"><%= r.meta %><% if (r.date) { %> · <%= dateShort(r.date) %><% } %></p></div></article>

@@ -1,6 +1,119 @@
-<%- include('partials/head', { title: ev.title }) %>
-<section class="card"><h1><%= ev.title %></h1><p><%= ev.event_date %> · <%= ev.type %><%= ev.course ? ' · ' + ev.course : '' %></p>
-<% if (!results.length) { %><p>No results yet.</p><% } else { %><table><thead><tr><th>Pos</th><th>Player</th><th>PH</th><th>Gross</th><th>Net</th><th>Pts (stb)</th><th>Points</th><th></th></tr></thead><tbody>
-<% results.forEach(function (r) { %><tr><td><%= r.position || '–' %></td><td><%= r.name %></td><td><%= r.playing_handicap ?? '' %></td><td><%= r.gross ?? '' %></td><td><%= r.net ?? '' %></td><td><%= r.stableford ?? '' %></td><td><strong><%= r.points %></strong></td><td><%= r.detail || '' %></td></tr><% }) %>
-</tbody></table><% } %></section>
+<%- include('partials/head') %>
+<section class="page-hero">
+  <svg class="doodle d1 bob" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-flag"/></svg>
+  <div class="wrap">
+    <a class="btn-link" href="/events" style="margin-bottom:6px">← All events</a>
+    <div class="ev-hero-date" style="margin-top:6px">
+      <div class="date" aria-hidden="true" style="color:var(--ink)"><i><%= monthShort(e.event_date) %></i><b><%= dayNum(e.event_date) %></b><em><%= dowShort(e.event_date) %></em></div>
+      <div><span class="chip <%= e.format_cls %>" style="margin:0"><%= e.format_label %></span><% if (e.status==='cancelled') { %> <span class="chip" style="background:#6b0027">Cancelled</span><% } %><% if (e.honour_name) { %> <span class="chip" style="background:var(--ink);color:var(--yl)">🏆 <%= e.honour_name %></span><% } %></div>
+    </div>
+    <h1><%= e.title %></h1>
+    <p class="lead"><%= dateLongY(e.event_date) %> · first tee <%= e.tee_time %><%= e.course_name ? ' · ' + e.course_name : '' %></p>
+    <% if (isStaff) { %><p class="actions staff-bar" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px"><a class="btn btn-pk" href="/admin/events/<%= e.id %>/edit#players">Manage players (add / remove)</a><a class="btn btn-wh" href="/admin/events/<%= e.id %>/edit">Edit event</a><a class="btn btn-yl" href="/admin/events/<%= e.id %>/results">Enter scores</a><% if (isAdmin) { %><a class="btn btn-wh" href="/admin/events/<%= e.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %><% if (isAdmin) { %><a class="btn btn-wh" href="/admin/scores/import?event=<%= e.id %>">Import players &amp; scores (Excel)</a><% } %></p><% } %>
+  </div>
+</section>
+<div class="page-body"><div class="wrap lift">
+ <div class="ev-layout">
+  <div class="stack">
+    <% if (results.length) { %>
+    <section class="card" aria-labelledby="res-h">
+      <div class="row-between"><h2 id="res-h">Results</h2><% if (isStaff) { %><a class="btn btn-yl btn-sm" href="/admin/events/<%= e.id %>/results">Edit results</a><% } %></div>
+      <% if (bits.length) { %><ul class="bits"><% bits.forEach(function(b){ %><li class="bit"><%= b %></li><% }) %></ul><% } %>
+      <table class="rt" style="margin-top:10px"><thead><tr><th>Pos</th><th>Player</th><th>HCP</th><th>PH</th><th>Gross</th><th>Net</th><th>Stb</th><th>OoM pts</th></tr></thead><tbody>
+      <% results.forEach(function(r){ %><tr>
+        <td class="first" data-l="Pos"><span class="rank<%= r.position && r.position<=3 ? ' r'+r.position : '' %>"><%= r.position || '–' %></span></td>
+        <td data-l="Player"><%- include('partials/player', {id: r.user_id, name: r.name, nick: null, size: 'sm'}) %></td>
+        <td data-l="Index"><%= r.idx_at_event!=null ? r.idx_at_event.toFixed(1) : '—' %></td>
+        <td data-l="Playing HCP"><%= r.playing_handicap!=null ? r.playing_handicap : '—' %></td>
+        <td data-l="Gross"><%= r.gross!=null ? r.gross : '—' %></td>
+        <td data-l="Net"><%= r.net!=null ? r.net : '—' %></td>
+        <td data-l="Stableford"><%= r.stableford!=null ? r.stableford : '—' %><% if (r.note) { %> <span class="muted sm">(<%= r.note %>)</span><% } %></td>
+        <td data-l="OoM points"><b><%= e.counts_oom ? r.points : '—' %></b></td></tr><% }) %>
+      </tbody></table>
+      <p class="hint" style="margin-top:10px"><% if (hcpFixed) { %>PH = the handicap played off (the same on every course).<% } else { %>PH = playing handicap (<%= e.allowance_pct %>% allowance).<% } %> Stableford is estimated from the gross score unless typed in directly. <a href="/standings" style="text-decoration:underline">See standings →</a></p>
+    </section>
+    <% } else if (isPast && e.status!=='cancelled') { %>
+    <section class="card"><h2>Results pending</h2><p style="margin-top:8px;font-weight:700">This event has been played but the results haven’t been entered yet.</p><% if (isStaff) { %><p style="margin-top:12px"><a class="btn btn-pk" href="/admin/events/<%= e.id %>/results">Enter results</a></p><% } %></section>
+    <% } %>
+
+    <section class="card" aria-labelledby="det-h">
+      <div class="row-between"><h2 id="det-h">The details</h2><% if (isStaff) { %><a class="btn btn-wh btn-sm" href="/admin/events/<%= e.id %>/edit">Edit event</a><% } %></div>
+      <dl class="kv" style="margin-top:14px">
+        <div class="wide"><dt>Course</dt><dd><%= e.course_name || 'To be confirmed' %><% if (e.course_name) { %> <span class="muted sm">(<%= e.course_tee %> tees · par <%= e.course_par %><% if (!hcpFixed) { %> · rating <%= e.course_rating %> · slope <%= e.course_slope %><% } %>)</span><% } %></dd></div>
+        <div><dt>Cost</dt><dd><%= money(e.cost_pence, cur) %></dd></div>
+        <% if (F.on.rsvp) { %><div><dt>Places</dt><dd><%= e.capacity != null ? e.capacity : 'Unlimited' %></dd></div><% } %>
+        <div><dt>Format</dt><dd><%= e.format_label %></dd></div>
+        <% if (!hcpFixed) { %><div><dt>Allowance</dt><dd><%= e.allowance_pct %>%</dd></div>
+        <div><dt>Counts for handicap</dt><dd><%= e.counts_handicap ? 'Yes' : 'No' %></dd></div><% } %>
+        <div><dt>Order of Merit</dt><dd><%= e.counts_oom ? (e.points_multiplier!==1 ? '×' + e.points_multiplier + ' points' : 'Counts') : 'Not counted' %></dd></div>
+        <% if (e.notes) { %><div class="wide"><dt>The small print</dt><dd style="font-weight:700"><%= e.notes %></dd></div><% } %>
+        <% if (ch) { %><div class="wide"><dt>Your handicap here</dt><dd>Index <%= user.handicap_index.toFixed(1) %> → course handicap <b><%= ch.course %></b> → playing handicap <b><%= ch.playing %></b></dd></div><% } %>
+      </dl>
+    </section>
+    <% if (odds) { %><section class="card" aria-labelledby="odds-h">
+      <div class="row-between"><h2 id="odds-h">The odds</h2><span class="badge dk">For fun only · no betting</span></div>
+      <p class="fine" style="margin-top:6px">Worked out from this season’s scores: recent form counts most, a few rounds count less, and the field is simulated 20,000 times.</p>
+      <table class="rt" style="margin-top:12px"><thead><tr><th scope="col" style="text-align:left">Player</th><th scope="col" style="text-align:left">Form</th><th scope="col" style="text-align:right">Odds</th></tr></thead>
+        <tbody><% odds.players.forEach(function(p, i){ %><tr><td style="font-weight:800"><% if (i === 0) { %>⭐ <% } %><% if (p.status === 'active') { %><a href="/players/<%= p.id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %></td><td class="muted sm"><%= p.basis %></td><td style="text-align:right;font-weight:900;white-space:nowrap"><%= p.odds %></td></tr><% }) %></tbody></table>
+    </section><% } %>
+  </div>
+
+  <% if (F.on.rsvp) { %><aside class="stack" aria-label="RSVP">
+    <section class="card rsvp-card" aria-labelledby="rsvp-h">
+      <h2 id="rsvp-h">Your spot</h2>
+      <% if (e.capacity != null) { %>
+        <div class="spaces" style="margin:12px 0 0"><div class="bar<%= e.full ? ' low' : '' %>" role="img" aria-label="<%= e.going %> of <%= e.capacity %> places taken"><span style="width:<%= e.pct %>%"></span></div>
+        <p class="<%= e.full ? 'warn' : '' %>"><%= e.full ? 'Fully booked' + (e.waitlist ? ' · ' + e.waitlist + ' on the waitlist' : ' · waitlist open') : e.spaces_left + ' of ' + e.capacity + ' spaces left' %></p></div>
+      <% } else { %><p style="margin-top:8px;font-weight:800"><%= e.going %> going · no limit on places</p><% } %>
+      <div style="margin-top:14px">
+      <% if (e.status==='cancelled') { %>
+        <p class="status-box">This event has been cancelled.</p>
+      <% } else if (isPast) { %>
+        <p class="status-box">RSVPs are closed — this one’s done.</p>
+      <% } else if (!user) { %>
+        <p style="font-weight:700;margin-bottom:12px">Log in to grab a spot<%= e.full ? ' on the waitlist' : '' %>.</p>
+        <a class="btn btn-pk btn-full" href="/login?next=/events/<%= e.id %>">Log in to RSVP</a>
+        <p class="fine">New here? <a href="/join" style="text-decoration:underline">Apply to join</a></p>
+      <% } else { %>
+        <% if (mine && mine.status==='going') { %><p class="status-box in">✅ <b>You’re in!</b> See you at <%= e.tee_time %>.</p>
+        <% } else if (mine && mine.status==='waitlist') { %><p class="status-box wait">⏳ <b>You’re #<%= myPos %> on the waitlist.</b> We’ll move you in automatically if a place opens.</p>
+        <% } else if (mine && mine.status==='not_going') { %><p class="status-box">You’ve said you can’t make it.</p><% } %>
+        <form method="post" action="/events/<%= e.id %>/rsvp" class="actions" style="margin-top:14px"><%- include('partials/csrf') %>
+          <% if (!mine || mine.status==='not_going') { %>
+            <button class="btn <%= e.full ? 'btn-yl' : 'btn-pk' %> btn-full" name="status" value="going" type="submit" data-burst><%= e.full ? 'Join the waitlist' : 'I’m in!' %></button>
+          <% } else { %>
+            <button class="btn btn-wh btn-full" name="status" value="not_going" type="submit"><%= mine.status==='waitlist' ? 'Leave the waitlist' : 'Can’t make it after all' %></button>
+          <% } %>
+        </form>
+      <% } %>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="go-h">
+      <h2 id="go-h">Who’s in <span class="badge dk"><%= e.going %></span></h2>
+      <% if (going.length) { %><ul class="people" style="margin-top:14px"><% going.forEach(function(p){ %><li class="person" style="padding:0"><a class="nm" href="/players/<%= p.id %>" style="padding:6px 10px;width:100%"><span class="av sm" style="<%= avatarStyle(p.id) %>" aria-hidden="true"><%= initials(p.name) %></span><span><%= p.name %><small><%= p.handicap_index!=null ? 'HCP ' + p.handicap_index.toFixed(1) : '' %></small></span></a>
+        <% if (isStaff && !isPast) { %><form method="post" action="/events/<%= e.id %>/rsvp-admin" class="rm" style="padding-right:6px"><%- include('partials/csrf') %><input type="hidden" name="user_id" value="<%= p.id %>"><button class="mini-btn" name="action" value="remove" aria-label="Remove <%= p.name %>">✕</button></form><% } %></li><% }) %></ul>
+      <% } else { %><p style="margin-top:10px;font-weight:700">Nobody yet — be the first!</p><% } %>
+      <% if (waitlist.length) { %>
+        <h3 style="font:400 22px/1.1 var(--f-d);margin-top:22px">Waitlist <span class="badge warn"><%= waitlist.length %></span></h3>
+        <ol class="people" style="margin-top:12px"><% waitlist.forEach(function(p, i){ %><li class="person"><span class="rank"><%= i+1 %></span><span><%= p.name %></span>
+          <% if (isStaff && !isPast) { %><form method="post" action="/events/<%= e.id %>/rsvp-admin" class="rm"><%- include('partials/csrf') %><input type="hidden" name="user_id" value="<%= p.id %>"><button class="mini-btn" name="action" value="remove" aria-label="Remove <%= p.name %> from waitlist">✕</button></form><% } %></li><% }) %></ol>
+      <% } %>
+      <% if (isStaff && !isPast && e.status==='scheduled') { %>
+        <form method="post" action="/events/<%= e.id %>/rsvp-admin" class="form" style="margin-top:22px;border-top:3px dashed var(--ink);padding-top:16px"><%- include('partials/csrf') %>
+          <div class="fld"><label for="add-user">Add a member to this event</label>
+          <select class="in" id="add-user" name="user_id"><% members.forEach(function(m){ %><option value="<%= m.id %>"><%= m.name %></option><% }) %></select></div>
+          <button class="btn btn-wh btn-sm" name="action" value="going" type="submit">Add (or waitlist if full)</button>
+        </form>
+      <% } %>
+    </section>
+  </aside><% } else if (!isPast) { %><aside class="stack" aria-label="Playing">
+    <section class="card" aria-labelledby="go-h">
+      <h2 id="go-h">Playing <span class="badge dk"><%= field.length %></span></h2>
+      <% if (field.length) { %><ul class="people" style="margin-top:14px"><% field.forEach(function(p){ %><li class="person" style="padding:0"><% if (p.status === 'active') { %><a class="nm" href="/players/<%= p.id %>" style="padding:6px 10px;width:100%"><% } else { %><span class="nm" style="padding:6px 10px;width:100%"><% } %><span class="av sm" style="<%= avatarStyle(p.id) %>" aria-hidden="true"><%= initials(p.name) %></span><span><%= p.name %><small><%= p.handicap_index != null ? 'HCP ' + fmtIdx(p.handicap_index) : '' %></small></span><%- p.status === 'active' ? '</a>' : '</span>' %></li><% }) %></ul>
+      <% } else { %><p style="margin-top:10px;font-weight:700">The field hasn’t been announced yet.</p><% } %>
+    </section>
+  </aside><% } %>
+ </div>
+</div></div>
 <%- include('partials/foot') %>

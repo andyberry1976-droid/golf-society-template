@@ -1,0 +1,3 @@
+<article class="ac"><span class="tro" style="background:<%= a.tint %>"><%- iconHtml(a.icon, /^s-/.test(a.icon) ? "width:48px;height:48px" : "font-size:36px") %></span><h3><%= a.name %></h3>
+<div class="who"><span class="av sm" style="<%= avatarStyle(a.uid) %>" aria-hidden="true"><%= initials(a.uname) %></span><span><a href="/players/<%= a.uid %>"><%= a.uname %></a><% if (a.nickname) { %><small>“<%= a.nickname %>”</small><% } %></span></div>
+<% if (a.citation) { %><q><%= a.citation %></q><% } %></article>

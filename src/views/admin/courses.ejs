@@ -1,0 +1,18 @@
+<%- include('_top') %>
+<p class="muted" style="margin-bottom:14px"><% if (hcpFixed) { %>Par is used to work out stableford points when only a gross score is entered. Players play off the same handicap on every course.<% } else { %>Course rating, slope and par feed the handicap maths (score differential &amp; course handicap). Take them from the club’s scorecard for the tees you play.<% } %></p>
+<% courses.forEach(function(c){ %>
+<form class="card form" method="post" action="/admin/courses/<%= c.id %>" novalidate><%- include('../partials/csrf') %>
+  <h2><%= c.name %> <span class="muted sm">· <%= c.tee %></span></h2>
+  <div class="cols2"><div class="fld"><label for="cn<%= c.id %>">Course name</label><input class="in" id="cn<%= c.id %>" name="name" value="<%= c.name %>" required></div><div class="fld"><label for="ct<%= c.id %>">Tee</label><input class="in" id="ct<%= c.id %>" name="tee" value="<%= c.tee %>" required></div></div>
+  <div class="cols3"><div class="fld"><label for="cp<%= c.id %>">Par</label><input class="in" id="cp<%= c.id %>" name="par" inputmode="numeric" value="<%= c.par %>" required></div><% if (hcpFixed) { %><input type="hidden" name="rating" value="<%= c.rating %>"><input type="hidden" name="slope" value="<%= c.slope %>"><% } else { %><div class="fld"><label for="cr<%= c.id %>">Course rating</label><input class="in" id="cr<%= c.id %>" name="rating" inputmode="decimal" value="<%= c.rating %>" required></div><div class="fld"><label for="cs<%= c.id %>">Slope</label><input class="in" id="cs<%= c.id %>" name="slope" inputmode="numeric" value="<%= c.slope %>" required></div><% } %></div>
+  <div class="fld"><label for="cl<%= c.id %>">Location</label><input class="in" id="cl<%= c.id %>" name="location" value="<%= c.location || '' %>"></div>
+  <button class="btn btn-wh btn-sm" type="submit">Save <span class="sr"><%= c.name %></span></button>
+</form><% }) %>
+<form class="card form" method="post" action="/admin/courses" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a course</h2>
+  <div class="cols2"><%- include('../partials/field', {name:'name', label:'Course name', values: values, errors: errors, attrs:'required'}) %><%- include('../partials/field', {name:'tee', label:'Tee (e.g. Yellow)', values: values, errors: errors, attrs:'required'}) %></div>
+  <div class="cols3"><%- include('../partials/field', {name:'par', label:'Par', values: values, errors: errors, attrs:'inputmode="numeric" required'}) %><% if (hcpFixed) { %><input type="hidden" name="rating" value="72"><input type="hidden" name="slope" value="113"><% } else { %><%- include('../partials/field', {name:'rating', label:'Course rating', values: values, errors: errors, attrs:'inputmode="decimal" required'}) %><%- include('../partials/field', {name:'slope', label:'Slope', values: values, errors: errors, attrs:'inputmode="numeric" required'}) %><% } %></div>
+  <%- include('../partials/field', {name:'location', label:'Location (optional)', values: values, errors: errors}) %>
+  <button class="btn btn-pk" type="submit">Add course</button>
+</form>
+<%- include('_bot') %>

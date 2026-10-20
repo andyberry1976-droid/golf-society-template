@@ -1,0 +1,100 @@
+{
+  "$schema": "../../src/site.schema.json",
+  "slug": "starter",
+  "name": "Your Golf Society",
+  "branding": {
+    "short_name": "Your Society",
+    "hero_title": "Your Golf Society",
+    "hero_ribbon": "Golf Society",
+    "est_text": "Monthly stableford · Order of Merit",
+    "tagline": "A friendly golf society. Edit this in sites/<slug>/site.config.json or Admin → Settings.",
+    "footer_blurb": "Rebrand me in Admin → Settings.",
+    "join_blurb": "Fancy a game? Ask a member for the invite code.",
+    "logo": null,
+    "theme_color": "#064e3b",
+    "colors": {
+      "primary": "#0a7a55",
+      "primary_dark": "#064e3b",
+      "accent": "#d4168f",
+      "highlight": "#ffd23f",
+      "ink": "#23123b",
+      "background": "#fff7e6"
+    }
+  },
+  "settings": {
+    "currency": "£",
+    "contact_email": "",
+    "invite_code": "CHANGEME",
+    "invite_auto_approve": false,
+    "members_only": false
+  },
+  "features": {
+    "rsvp": true,
+    "birdie_league": true,
+    "fedex_cup": true,
+    "matchplay": true,
+    "majors": true,
+    "hall_of_fame": true,
+    "awards": true,
+    "subs": false,
+    "birthdays": false,
+    "fantasy": false,
+    "scramble": false,
+    "odds": false,
+    "ryder": false
+  },
+  "rules": {
+    "handicap": {
+      "module": "whs",
+      "default_allowance": 95,
+      "max_index": 54,
+      "default_start_index": 28,
+      "soft_cap": true,
+      "hard_cap": true,
+      "options": {
+        "bufferLow": 33,
+        "bufferHigh": 36,
+        "categories": [
+          {
+            "cat": 1,
+            "max": 5,
+            "cut": 0.1
+          },
+          {
+            "cat": 2,
+            "max": 12,
+            "cut": 0.2
+          },
+          {
+            "cat": 3,
+            "max": 21,
+            "cut": 0.3
+          },
+          {
+            "cat": 4,
+            "max": 99,
+            "cut": 0.4
+          }
+        ],
+        "underAdd": 0.2,
+        "fortyPlus": 40,
+        "fortyPlusCut": 1,
+        "monthlyWinCut": 1,
+        "monthlyMinField": 9
+      }
+    },
+    "scoring": {
+      "module": "position-points",
+      "options": {
+        "participation": 5
+      }
+    },
+    "text": [
+      "Best scores count towards the Order of Merit.",
+      "Ties are decided on countback."
+    ]
+  },
+  "seed": {
+    "type": "none"
+  }
+}

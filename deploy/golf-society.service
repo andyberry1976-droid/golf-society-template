@@ -1,0 +1,18 @@
+# /etc/systemd/system/golf-society.service   (small-VPS option; see README)
+[Unit]
+Description=Golf society web app
+After=network.target
+
+[Service]
+User=golf
+WorkingDirectory=/opt/golf-society
+EnvironmentFile=/opt/golf-society/.env
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/opt/golf-society/data /opt/golf-society/backups
+
+[Install]
+WantedBy=multi-user.target

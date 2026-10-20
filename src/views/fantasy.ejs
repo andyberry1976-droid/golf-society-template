@@ -1,0 +1,33 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Coming in 2027', heading: 'Fantasy League', lead: 'You’ve spent years slagging off everyone’s golf. Now put your money where your mouth is.', doodle: 's-flag'}) %>
+<div class="page-body"><div class="wrap lift stack">
+  <% if (prices && prices.players.length) { %>
+  <section class="card" aria-labelledby="fl-pr"><h2 id="fl-pr">Player prices for <%= prices.season %></h2>
+    <p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p>
+    <table class="fl-prices"><thead><tr><th>Player</th><th class="r">Price</th></tr></thead><tbody>
+    <% prices.players.forEach(function(p){ %><tr><td><% if (p.user_id) { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %></td><td class="r"><strong>£<%= p.price.toFixed(1) %>m</strong></td></tr><% }) %>
+    </tbody></table></section>
+  <% } %>
+  <section class="card" aria-labelledby="fl-h"><h2 id="fl-h">How it’ll work <span class="badge">Coming in 2027</span></h2>
+    <ul class="rules">
+      <li><strong>Pick your squad.</strong> £<%= R.budget %>m to spend on <%= R.squad %> players. Spend it wisely, the stars don’t come cheap.</li>
+      <li><strong>Pay your entry fee</strong> (amount TBC). No pay, no play.</li>
+      <li><strong>Captain.</strong> Before every event pick one of your <%= R.squad %> to score double. Change them every event if you like.</li>
+    </ul></section>
+  <section class="card" aria-labelledby="fl-pts"><h2 id="fl-pts">Where the points come from</h2>
+    <p style="margin-top:8px;font-weight:700">Points per event, from where your players finish. Top 10 only:</p>
+    <div class="xs" tabindex="0" role="region" aria-label="Points by finishing position"><table class="rt fl-pp"><thead><tr><% PP.forEach(function(p, i){ %><th><%= ordinal(i + 1) %></th><% }) %></tr></thead><tbody><tr><% PP.forEach(function(p){ %><td><%= p %></td><% }) %></tr></tbody></table></div>
+    <ul class="rules" style="margin-top:8px">
+      <li><strong>Playing:</strong> +<%= R.played %> just for teeing it up at an event.</li>
+      <li><strong>Outside the top 10:</strong> nothing. Could do better.</li>
+      <li><strong>Beat your handicap</strong> (<%= R.beatHandicapAt %>+ Stableford points, or played to handicap or better): +<%= R.beatHandicap %>.</li>
+      <li><strong>Birdies:</strong> +<%= R.birdie %> for every gross birdie.</li>
+      <li><strong>Wooden spoon</strong> (last place): <%= R.woodenSpoon %>. Ouch.</li>
+      <li><strong>Didn’t play:</strong> 0. Can’t score from the sofa.</li>
+    </ul>
+    </section>
+  <section class="card" aria-labelledby="fl-pot"><h2 id="fl-pot">The prize</h2>
+    <p style="margin-top:8px;font-weight:700">Winner takes the pot. The leaderboard updates after every event, so there’s nowhere to hide.</p>
+    <p style="margin-top:6px">Nothing to sign up for yet. Full rules before the 2027 season.</p></section>
+</div></div>
+<%- include('partials/foot') %>

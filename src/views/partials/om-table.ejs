@@ -1,0 +1,9 @@
+<% if (!rows.length) { %><p class="empty" style="margin-top:12px">No results yet this season.</p><% } else { %>
+<table class="t"><thead><tr><th class="rk">Pos</th><th>Player</th><th>Points</th><th>Played</th><th>Gap</th></tr></thead><tbody>
+<% rows.forEach(function(o, i){ %><tr>
+  <td class="rk"><span class="rank<%= o.rank<=3 ? ' r'+o.rank : '' %>"><%= o.rank %></span></td>
+  <td class="pl-n"><%- include('player', {id: o.user_id, name: o.name, nick: o.nickname, size: 'sm'}) %><% if (o.holder) { %> <span class="hold">Holder</span><% } %></td>
+  <td class="big"><span class="num"><%= o.total %></span></td>
+  <td class="sm2 a" data-l="Played"><%= o.played %><%= o.dropped ? ' (best ' + o.counted + ')' : '' %></td>
+  <td class="sm2 b" data-l="<%= i ? 'Behind leader' : 'Status' %>"><%- i ? '−' + (rows[0].total - o.total) + ' pts' : '<b>Leader 👑</b>' %> <%- include('move', {n: o.moved == null ? 0 : o.moved}) %></td></tr><% }) %>
+</tbody></table><% } %>

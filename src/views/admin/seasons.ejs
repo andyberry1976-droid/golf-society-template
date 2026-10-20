@@ -1,0 +1,28 @@
+<%- include('_top') %>
+<section class="card"><h2>How the Order of Merit works</h2>
+  <p style="margin-top:8px;font-weight:700">Every player who completes an event earns <b>position points</b> (by finishing position) plus <b>participation points</b>. Events can carry a multiplier (e.g. ×2 for a major). Optionally only a player’s <b>best N</b> scores count. Change a scheme and every event is recalculated instantly. Close a season to crown the champion on the roll of honour.</p></section>
+<% seasons.forEach(function(s){ %>
+<form class="card form" method="post" action="/admin/seasons/<%= s.id %>" novalidate><%- include('../partials/csrf') %>
+  <div class="row-between"><h2><%= s.name %> <span class="badge <%= s.status==='open' ? 'ok' : 'dk' %>"><%= s.status %></span></h2><span class="muted sm"><%= s.events %> events</span></div>
+  <div class="cols2"><div class="fld"><label for="n<%= s.id %>">Name</label><input class="in" id="n<%= s.id %>" name="name" value="<%= s.name %>" required></div><div class="fld"><label for="y<%= s.id %>">Year</label><input class="in" id="y<%= s.id %>" name="year" inputmode="numeric" value="<%= s.year %>" required></div></div>
+  <div class="cols2"><div class="fld"><label for="sd<%= s.id %>">Starts</label><input class="in" id="sd<%= s.id %>" type="date" name="start_date" value="<%= s.start_date %>" required></div><div class="fld"><label for="ed<%= s.id %>">Ends</label><input class="in" id="ed<%= s.id %>" type="date" name="end_date" value="<%= s.end_date %>" required></div></div>
+  <fieldset><legend>Points scheme</legend>
+    <label class="chk"><input type="checkbox" name="use_default" value="1"<%= !s.custom ? ' checked' : '' %>> Use the society default scheme (edit under Settings)</label>
+    <div class="fld"><label for="m<%= s.id %>">Scoring</label><select class="in" id="m<%= s.id %>" name="oom_mode"><option value="score"<%= s.sch.mode==='score' ? ' selected' : '' %>>Stableford scores</option><option value="points"<%= s.sch.mode!=='score' ? ' selected' : '' %>>Position points</option></select></div>
+    <label class="chk"><input type="checkbox" name="countback" value="1"<%= s.sch.countback ? ' checked' : '' %>> Count back on next-best scores, then appearances</label>
+    <div class="fld"><label for="p<%= s.id %>">Points by finishing position (1st, 2nd, 3rd…)</label><input class="in" id="p<%= s.id %>" name="positions" value="<%= s.sch.positions.join(', ') %>"><p class="hint">Positions beyond the list score 0 (participation still applies).</p></div>
+    <div class="cols2"><div class="fld"><label for="pp<%= s.id %>">Participation points</label><input class="in" id="pp<%= s.id %>" name="participation" inputmode="numeric" value="<%= s.sch.participation %>"></div>
+    <div class="fld"><label for="bn<%= s.id %>">Best-N rounds count (blank = all)</label><input class="in" id="bn<%= s.id %>" name="best_n" inputmode="numeric" value="<%= s.sch.bestN || '' %>"></div></div>
+  </fieldset>
+  <div class="actions"><button class="btn btn-pk btn-sm" type="submit">Save season</button>
+    <button class="btn <%= s.status==='open' ? 'btn-yl' : 'btn-wh' %> btn-sm" type="submit" formaction="/admin/seasons/<%= s.id %>/status" name="status" value="<%= s.status==='open' ? 'closed' : 'open' %>" formnovalidate><%= s.status==='open' ? 'Close season & crown champion' : 'Reopen season' %></button></div>
+</form>
+<% }) %>
+<form class="card form" method="post" action="/admin/seasons" novalidate><%- include('../partials/csrf') %>
+  <h2>Start a new season</h2>
+  <div class="cols2"><%- include('../partials/field', {name:'name', label:'Name (e.g. 2027)', values: values, errors: errors, attrs:'required'}) %><%- include('../partials/field', {name:'year', label:'Year', values: values, errors: errors, attrs:'inputmode="numeric" required'}) %></div>
+  <div class="cols2"><%- include('../partials/field', {name:'start_date', label:'Starts', type:'date', values: values, errors: errors, attrs:'required'}) %><%- include('../partials/field', {name:'end_date', label:'Ends', type:'date', values: values, errors: errors, attrs:'required'}) %></div>
+  <button class="btn btn-pk" type="submit">Create season</button>
+</form>
+<form method="post" action="/admin/recalculate"><%- include('../partials/csrf') %><button class="btn btn-wh btn-sm" type="submit">Recalculate everything (handicaps, points, honours)</button></form>
+<%- include('_bot') %>

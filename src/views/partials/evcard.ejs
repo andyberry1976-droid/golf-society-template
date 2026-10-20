@@ -1,0 +1,28 @@
+<%# expects: e, rsvps (Map), cur %>
+<% const mine = rsvps && rsvps.get(e.id); const low = e.spaces_left != null && e.spaces_left <= 3 && !e.full; %>
+<article class="ev" aria-labelledby="evh<%= e.id %>">
+  <div class="ev-top">
+    <div class="date" aria-hidden="true"><i><%= monthShort(e.event_date) %></i><b><%= dayNum(e.event_date) %></b><em><%= dowShort(e.event_date) %></em></div>
+    <div><h3 id="evh<%= e.id %>"><a href="/events/<%= e.id %>"><%= e.title %></a></h3>
+      <span class="chip <%= e.format_cls %>"><%= e.format_label %></span>
+      <% if (e.status==='cancelled') { %><span class="chip" style="background:#6b0027">Cancelled</span><% } %>
+      <% if (e.honour_name) { %><span class="chip" style="background:var(--ink);color:var(--yl)">🏆 <%= e.honour_name %></span><% } %></div>
+  </div>
+  <dl>
+    <div class="wide"><dt>Date</dt><dd><%= dateLong(e.event_date) %></dd></div>
+    <div class="wide"><dt>Course</dt><dd><%= e.course_name || 'Course TBC' %></dd></div>
+    <div><dt>First tee</dt><dd><%= e.tee_time %></dd></div><div><dt>Cost</dt><dd><%= money(e.cost_pence, cur) %></dd></div>
+    <% if (e.notes) { %><div class="wide"><dt>The small print</dt><dd style="font-weight:700;font-size:16px"><%= e.notes %></dd></div><% } %>
+  </dl>
+  <% if (F.on.rsvp) { %><div class="spaces">
+    <% if (e.capacity != null) { %>
+      <div class="bar<%= low || e.full ? ' low' : '' %>" role="img" aria-label="<%= e.going %> of <%= e.capacity %> places taken"><span style="width:<%= e.pct %>%"></span></div>
+      <p class="<%= low || e.full ? 'warn' : '' %>"><%= e.full ? 'Fully booked' + (e.waitlist ? ' · ' + e.waitlist + ' on the waitlist' : ' · waitlist open') : e.spaces_left + ' of ' + e.capacity + ' spaces left' + (low ? ' — nearly full!' : '') %></p>
+    <% } else { %><p><%= e.going %> going · no limit on places</p><% } %>
+  </div><% } %>
+  <div class="ev-foot">
+    <% if (!F.on.rsvp) { %><a class="btn btn-wh" href="/events/<%= e.id %>">See details</a><% } else { %><% if (mine && mine.status==='going') { %><p class="status-box in" style="margin-bottom:12px">✅ <b>You’re in!</b></p>
+    <% } else if (mine && mine.status==='waitlist') { %><p class="status-box wait" style="margin-bottom:12px">⏳ <b>You’re on the waitlist</b></p><% } %>
+    <a class="btn <%= (mine && (mine.status==='going'||mine.status==='waitlist')) || e.status==='cancelled' ? 'btn-wh' : (e.full ? 'btn-yl' : 'btn-pk') %>" href="/events/<%= e.id %>"><%= mine && (mine.status==='going'||mine.status==='waitlist') ? 'View event' : (e.full ? 'Join the waitlist' : 'I’m in — see details') %></a><% } %>
+  </div>
+</article>

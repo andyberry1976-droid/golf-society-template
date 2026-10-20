@@ -1,5 +1,70 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title><%= typeof title !== 'undefined' ? title + ' · ' : '' %><%= site.name %></title><link rel="stylesheet" href="/public/app.css">
-<style>:root{--primary:<%= site.primary %>;--accent:<%= site.accent %>}</style></head><body>
-<header><a class="brand" href="/"><% if (site.logo_url) { %><img src="<%= site.logo_url %>" alt=""><% } %><%= site.name %></a>
-<nav><a href="/">Home</a><% if (admin) { %><a href="/admin">Admin</a><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button>Log out</button></form><% } else { %><a href="/login">Admin login</a><% } %></nav></header><main>
+<!DOCTYPE html>
+<html lang="en-GB" class="no-js">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="<%= themeColor %>" />
+<meta name="description" content="<%= S.society_name %> — events, RSVPs, handicaps, results, Order of Merit, records, roll of honour and awards." />
+<title><%= title ? title + ' · ' + S.short_name : S.society_name %></title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preload" href="/fonts/bagel-fat-one-400.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="/css/app.css?v=7" />
+<% if (themeCss) { %><style><%- themeCss %></style><% } %>
+</head>
+<body>
+<%- include('sprite') %>
+<a href="#main" class="skip">Skip to content</a>
+<header class="hd<%= logoWordmark ? ' hd-menu' : '' %><%= logoWordmark && active === 'home' ? ' hd-home' : '' %>">
+  <div class="wrap">
+    <a class="brand<%= logoWordmark ? ' wm' : '' %>" href="/" aria-label="<%= S.society_name %> — home">
+      <span class="mark"><% if (logoUrl) { %><img src="<%= logoUrl %>" alt="<%= logoWordmark ? S.short_name : '' %>"<%- logoWordmark ? '' : ' width="48" height="48"' %>><% } else { %><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="12" y="6" width="3.5" height="36" rx="1.5" fill="#fff"/><path d="M15.5 8L38 15.5 15.5 23z" fill="#ffd23f"/><ellipse cx="14" cy="43" rx="10" ry="3" fill="#35c98f"/></svg><% } %></span>
+      <span<%- logoWordmark ? ' class="sr"' : '' %>><b><%= S.short_name %></b><small>Golf Society</small></span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <% var RES = [['/competitions','All competitions'],['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records'],['/handicaps','Handicap Records'],['/awards','Awards']].filter(function(n){ return n === null || F.link(n[0]); });
+         var resActive = ['standings','comps','honours','handicaps','fame','records','awards'].indexOf(active) >= 0;
+         var curPath = (typeof reqPath !== 'undefined' && reqPath) || '';
+         var TOP_A = [['home','Home','/'],['events','Events','/events'],['players','Players','/players']].filter(function(n){ return F.link(n[2]); });
+         var TOP_B = [['fantasy','Fantasy League','/fantasy-league'],['rules','Rules','/rules'],['birthdays','Birthdays','/birthdays']].filter(function(n){ return F.link(n[2]); });
+         var hasRes = RES.some(function(n){ return n; }); %>
+      <% TOP_A.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
+      <% if (hasRes) { %><div class="dd" data-dd>
+        <button type="button" class="dd-b<%= resActive ? ' on' : '' %>" aria-expanded="false" aria-controls="dd-results" aria-haspopup="true">Results<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd-m" id="dd-results" role="group" aria-label="Results">
+          <% RES.forEach(function(n){ if (!n) { %><span class="dd-sep" aria-hidden="true"></span><% } else { %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% } }) %>
+        </div></div><% } %>
+      <% TOP_B.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
+      <% if (isStaff) { %><a href="/admin"<%- active==='admin' ? ' aria-current="page"' : '' %>>Admin<% if (pendingCount) { %><span class="nbadge" aria-label="<%= pendingCount %> join requests waiting"><%= pendingCount %></span><% } %></a><% } %>
+    </nav>
+    <div class="hd-r">
+      <% if (adminLoginOnly) { %><% if (user) { %><form method="post" action="/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="btn btn-wh btn-sm login-btn">Log out</button></form><% } %>
+      <% } else if (user) { %>
+        <a class="btn btn-yl btn-sm login-btn" href="/account"<%- active==='account' ? ' aria-current="page"' : '' %>>My account<% if (unread) { %><span class="nbadge" aria-label="<%= unread %> new notices"><%= unread %></span><% } %></a>
+      <% } else { %>
+        <a class="btn btn-wh btn-sm login-btn" href="/login">Log in</a>
+        <% if (F.on.join) { %><a class="btn btn-yl btn-sm join-btn" href="/join">Join us</a><% } %>
+      <% } %>
+      <button type="button" class="burger" id="nav-toggle" aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg><% if (logoWordmark) { %><span class="burger-l" aria-hidden="true">Menu</span><% } %></button>
+    </div>
+  </div>
+  <nav id="mobile-nav" class="mnav" aria-label="Mobile">
+    <% TOP_A.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
+    <% if (hasRes) { %><details class="msub"<%= resActive ? ' open' : '' %>><summary aria-controls="m-results" aria-expanded="<%= resActive ? 'true' : 'false' %>">Results</summary>
+      <div id="m-results"><% RES.forEach(function(n){ if (n) { %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% } }) %></div></details><% } %>
+    <% TOP_B.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
+    <% if (isStaff) { %><a href="/admin">Admin<% if (pendingCount) { %> (<%= pendingCount %> new)<% } %></a><% } %>
+    <% if (adminLoginOnly) { %><% if (user) { %><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form><% } %>
+    <% } else if (user) { %>
+      <a href="/account">My account<% if (unread) { %> (<%= unread %> new)<% } %></a>
+      <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form>
+    <% } else { %>
+      <a href="/login">Log in</a><% if (F.on.join) { %><a href="/join">Join us</a><% } %>
+    <% } %>
+  </nav>
+</header>
+<% if (flash && flash.length) { %>
+<div class="flashes"><div class="wrap">
+  <% flash.forEach(function(m){ %><div class="flash <%= m.type %>" role="<%= m.type==='err' ? 'alert' : 'status' %>"<%- m.type==='confetti' ? ' data-confetti' : '' %>><%= m.msg %></div><% }) %>
+</div></div>
+<% } %>
+<main id="main">

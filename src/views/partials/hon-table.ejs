@@ -1,0 +1,7 @@
+<% if (!rows.length) { %><p class="empty">Nothing on the roll of honour yet.</p><% } else { %>
+<table class="t"><thead><tr><th>Year</th><th>Trophy</th><th>Winner</th><th>Result</th></tr></thead><tbody>
+<% rows.forEach(function(h){ %><tr>
+  <td class="big"><span class="num"><%= h.year %></span></td><td class="pl-n evn"><%= h.cat %></td>
+  <td class="sm2 a"><% if (h.user_id) { %><a href="/players/<%= h.user_id %>" style="text-decoration:underline"><%= h.uname %></a><% if (h.partner_id) { %> &amp; <a href="/players/<%= h.partner_id %>" style="text-decoration:underline"><%= h.pname %></a><% } %><% } else { %><span class="tbc">To be decided</span><% } %></td>
+  <td class="sm2 b" data-l="Result"><%= h.detail || '' %></td></tr><% }) %>
+</tbody></table><% } %>

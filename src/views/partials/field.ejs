@@ -1,0 +1,12 @@
+<%# expects: name, label, type(opt), values, errors, hint(opt), attrs(opt), autocomplete(opt) %>
+<div class="fld">
+  <label for="f-<%= name %>"><%= label %></label>
+  <% const t = typeof type !== 'undefined' ? type : 'text'; const val = values && values[name] != null ? values[name] : ''; %>
+  <% if (t === 'textarea') { %>
+    <textarea class="in" id="f-<%= name %>" name="<%= name %>" <%- typeof attrs !== 'undefined' ? attrs : '' %><%- errors && errors[name] ? ' aria-invalid="true" aria-describedby="e-'+name+'"' : '' %>><%= val %></textarea>
+  <% } else { %>
+    <input class="in" id="f-<%= name %>" name="<%= name %>" type="<%= t %>" value="<%= t==='password' ? '' : val %>" <%- typeof autocomplete !== 'undefined' ? 'autocomplete="'+autocomplete+'"' : '' %> <%- typeof attrs !== 'undefined' ? attrs : '' %><%- errors && errors[name] ? ' aria-invalid="true" aria-describedby="e-'+name+'"' : '' %>>
+  <% } %>
+  <% if (typeof hint !== 'undefined' && hint) { %><p class="hint"><%= hint %></p><% } %>
+  <% if (errors && errors[name]) { %><p class="ferr" id="e-<%= name %>" role="alert"><%= errors[name] %></p><% } %>
+</div>

@@ -1,0 +1,17 @@
+<%- include('_top') %>
+<section class="card"><h2>All members <span class="badge dk"><%= members.length %></span></h2>
+<table class="rt" style="margin-top:8px"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Index</th><th>Rounds</th><th>Subs</th><th>Status</th><th></th></tr></thead><tbody>
+<% members.forEach(function(m){ %><tr><td class="first" data-l="Name"><b><%= m.name %></b></td><td data-l="Email"><%= m.email %></td>
+<td data-l="Role"><span class="badge <%= m.role %>"><%= roleLabel(m.role) %></span></td><td data-l="Index"><%= fmtIdx(m.handicap_index) %></td><td data-l="Rounds"><%= m.rounds %></td><td data-l="Subs"><span class="badge <%= m.subs_paid ? 'ok' : 'bad' %>"><%= m.subs_paid ? 'Paid' : 'Unpaid' %></span></td>
+<td data-l="Status"><span class="badge <%= m.status==='active' ? 'ok' : 'bad' %>"><%= m.status %></span></td><td class="r"><a class="btn btn-wh btn-sm" href="/admin/members/<%= m.id %>">Manage<span class="sr"> <%= m.name %></span></a></td></tr><% }) %>
+</tbody></table></section>
+<form class="card form" method="post" action="/admin/members" novalidate><%- include('../partials/csrf') %>
+  <h2>Add a member directly</h2>
+  <p class="hint" style="margin:0">For members who can’t apply online. Give them the password privately; they can change it in My account.</p>
+  <div class="cols2"><%- include('../partials/field', {name:'name', label:'Name', values: values, errors: errors, attrs:'required'}) %><%- include('../partials/field', {name:'email', label:'Email', type:'email', values: values, errors: errors, attrs:'required'}) %></div>
+  <div class="cols3"><%- include('../partials/field', {name:'password', label:'Temporary password', type:'password', values: {}, errors: errors, hint:'Min 10 characters', autocomplete:'new-password', attrs:'required minlength="10"'}) %>
+    <%- include('../partials/field', {name:'index', label:'Starting index', values: values, errors: errors, attrs:'inputmode="decimal"'}) %>
+    <div class="fld"><label for="f-role">Role</label><select class="in" id="f-role" name="role"><option value="member">Member</option><option value="captain">Captain</option><option value="admin">Admin</option></select></div></div>
+  <button class="btn btn-pk" type="submit">Add member</button>
+</form>
+<%- include('_bot') %>

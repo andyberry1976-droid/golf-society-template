@@ -1,0 +1,6 @@
+<form method="get" action="<%= action %>" class="sortrow" style="max-width:360px">
+  <div style="flex:1"><label for="season" style="font-weight:900;display:block">Season</label>
+    <select class="in" id="season" name="season" data-autosubmit>
+      <% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= season && season.id===s.id ? ' selected' : '' %>><%= s.name %></option><% }) %>
+    </select></div><noscript><button class="btn btn-yl btn-sm">Go</button></noscript>
+</form>

@@ -1,0 +1,2 @@
+# /etc/cron.d/golf-society-backup — nightly consistent SQLite backup at 03:15, keeps newest 14 (see README → Backups)
+15 3 * * * golf cd /opt/golf-society && /usr/bin/npm run -s backup >> /var/log/golf-backup.log 2>&1

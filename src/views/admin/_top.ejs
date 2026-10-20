@@ -1,0 +1,8 @@
+<%- include('../partials/head') %>
+<%- include('../partials/pagehero', {eyebrow: 'Behind the scenes', heading: title, lead: typeof leadText !== 'undefined' ? leadText : '', doodle: 's-tee'}) %>
+<div class="page-body"><div class="wrap lift">
+<nav class="atabs" aria-label="Admin sections">
+  <% const tabs = [['dashboard','Dashboard','/admin'],['events','Events','/admin/events'],['comps','Birdies & FedEx','/admin/comps'],['matchplay','Matchplay','/admin/matchplay'],['tournaments','Majors','/admin/tournaments'],['courses','Courses','/admin/courses'],['awards','Awards','/admin/awards'],['records','Fun records','/admin/records'],['subs','Subs','/admin/subs'],['engine','Competitions','/admin/engine']];
+     if (isAdmin) { tabs.splice(1,0,['requests','Join requests' + (pendingCount ? ' (' + pendingCount + ')' : ''),'/admin/requests'],['members','Members','/admin/members']); tabs.push(['seasons','Seasons & points','/admin/seasons'],['honours','Roll of honour','/admin/honours'],['settings','Settings','/admin/settings']); } %>
+  <% tabs.filter(function(t){ return F.link(t[2]); }).forEach(function(t){ %><a href="<%= t[2] %>"<%- adminTab===t[0] ? ' aria-current="page"' : '' %>><%= t[1] %></a><% }) %>
+</nav>

@@ -1,0 +1,25 @@
+<%- include('_top') %>
+<p style="margin-bottom:14px"><a class="btn-link" href="/admin/matchplay">← All knockouts</a> · <a class="btn-link" href="/matchplay?comp=<%= b.comp.id %>">Public bracket</a></p>
+<datalist id="mp-names"><option value="Bye"><% names.forEach(function(n){ %><option value="<%= n %>"><% }) %></datalist>
+<form class="card form" method="post" action="/admin/matchplay/<%= b.comp.id %>/settings" novalidate><%- include('../partials/csrf') %>
+  <div class="cols2"><div class="fld"><label for="s-name">Name</label><input class="in" id="s-name" name="name" value="<%= b.comp.name %>"></div><div class="fld"><label for="s-cut">Winner handicap cut (shots)</label><input class="in" id="s-cut" name="winner_cut" inputmode="decimal" value="<%= b.comp.winner_cut %>"></div></div>
+  <div class="fld"><label for="s-notes">Notes</label><input class="in" id="s-notes" name="notes" value="<%= b.comp.notes || '' %>"></div>
+  <button class="btn btn-wh btn-sm" type="submit">Save details</button>
+  <p class="hint" style="margin:0">The winner’s cut isn’t applied automatically — set it under Members when the final is done.</p>
+</form>
+<p class="hint" style="margin-top:14px">Type a member’s name (or “Bye”). Pick the winner and margin (e.g. 2&amp;1, 1 up, 19th) and save — they move into the next round automatically.</p>
+<% b.rounds.forEach(function(r){ %>
+<section class="card" style="margin-top:14px"><h2><%= r.name %></h2>
+<% r.matches.forEach(function(m){ %>
+  <form class="form mtf" id="m<%= m.round %>-<%= m.slot %>" method="post" action="/admin/matchplay/<%= b.comp.id %>/match" novalidate><%- include('../partials/csrf') %>
+    <input type="hidden" name="round" value="<%= m.round %>"><input type="hidden" name="slot" value="<%= m.slot %>">
+    <p class="hint" style="margin:8px 0 4px"><b>Match <%= m.slot %></b></p>
+    <div class="cols2"><div class="fld"><label for="p1-<%= m.round %>-<%= m.slot %>">Player 1</label><input class="in" list="mp-names" id="p1-<%= m.round %>-<%= m.slot %>" name="p1" value="<%= m.p1_name || '' %>"></div>
+    <div class="fld"><label for="p2-<%= m.round %>-<%= m.slot %>">Player 2</label><input class="in" list="mp-names" id="p2-<%= m.round %>-<%= m.slot %>" name="p2" value="<%= m.p2_name || '' %>"></div></div>
+    <div class="cols2"><div class="fld"><label for="w-<%= m.round %>-<%= m.slot %>">Winner</label><select class="in" id="w-<%= m.round %>-<%= m.slot %>" name="winner"><option value="">Not played yet</option><option value="1"<%= m.winner===1 ? ' selected' : '' %>>Player 1</option><option value="2"<%= m.winner===2 ? ' selected' : '' %>>Player 2</option></select></div>
+    <div class="fld"><label for="r-<%= m.round %>-<%= m.slot %>">Result</label><input class="in" id="r-<%= m.round %>-<%= m.slot %>" name="result" maxlength="20" value="<%= m.result || '' %>" placeholder="2&amp;1"></div></div>
+    <button class="btn btn-yl btn-sm" type="submit">Save match <%= m.slot %></button>
+  </form>
+<% }) %></section>
+<% }) %>
+<%- include('_bot') %>

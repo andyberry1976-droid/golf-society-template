@@ -1,0 +1,12 @@
+<%- include('_top') %>
+<section class="card"><h2>Competitions</h2>
+<% if (list.length) { %><ul class="tl" style="margin-top:12px"><% list.forEach(function(c){ %><li><a class="btn btn-wh btn-sm" href="/admin/matchplay/<%= c.id %>"><%= c.name %> (<%= c.size %>-player draw)</a></li><% }) %></ul><% } else { %><p class="empty">None yet.</p><% } %>
+</section>
+<form class="card form" method="post" action="/admin/matchplay" style="margin-top:18px" novalidate><%- include('../partials/csrf') %>
+  <h2>New knockout</h2>
+  <div class="fld"><label for="mp-name">Name</label><input class="in" id="mp-name" name="name" required maxlength="80" placeholder="2027 Matchplay"></div>
+  <div class="cols2"><div class="fld"><label for="mp-size">Draw size</label><select class="in" id="mp-size" name="size"><% [8,16,32,64].forEach(function(n){ %><option<%= n===32 ? ' selected' : '' %>><%= n %></option><% }) %></select></div>
+  <div class="fld"><label for="mp-season">Season</label><select class="in" id="mp-season" name="season_id"><% h.seasonOptions(seasons).forEach(function(s){ %><option value="<%= s.id %>"><%= s.name %></option><% }) %></select></div></div>
+  <button class="btn btn-pk" type="submit">Create</button>
+</form>
+<%- include('_bot') %>

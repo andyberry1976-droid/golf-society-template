@@ -1,0 +1,7 @@
+<% if (seasons && seasons.length > 1) { %><form method="get" action="<%= action %>" class="sortrow" style="max-width:360px;margin-bottom:14px">
+  <div style="flex:1"><label for="season" style="font-weight:900;display:block<%= typeof light !== 'undefined' && light ? ';color:#fff' : '' %>">Season</label>
+    <select class="in" id="season" name="season" data-autosubmit>
+      <% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= !allSeasons && season && season.id===s.id ? ' selected' : '' %>><%= s.name %><%= s.status==='closed' ? ' (closed)' : '' %></option><% }) %>
+      <% if (withAll) { %><option value="all"<%= allSeasons ? ' selected' : '' %>>All seasons</option><% } %>
+    </select></div><noscript><button class="btn btn-yl btn-sm">Go</button></noscript>
+</form><% } %>

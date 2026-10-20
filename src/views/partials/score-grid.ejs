@@ -1,0 +1,11 @@
+<%# expects: events [{id,title,event_date,venue}], rows [{name,user_id,values,total}], caption, counted (optional fn(row, i) -> bool) %>
+<% if (rows.length) { %>
+<div class="xs" tabindex="0" role="region" aria-label="<%= caption %> (scrolls sideways)">
+<table class="gt"><caption class="sr"><%= caption %></caption><thead><tr><th scope="col" class="st">Player</th>
+<% events.forEach(function(e){ %><th scope="col"><a href="/events/<%= e.id %>"><%= monthShort(e.event_date) %> <%= dayNum(e.event_date) %><small><%= (e.venue || e.title).replace(/ —.*$/,'') %></small></a></th><% }) %>
+<th scope="col">Total</th></tr></thead><tbody>
+<% rows.forEach(function(r){ %><tr><th scope="row" class="st"><a href="/players/<%= r.user_id %>"><%= r.name %></a></th>
+<% r.values.forEach(function(v, i){ var c = typeof counted === 'function' ? counted(r, i) : null; %><td class="<%= v == null ? 'nil' : (c === false ? 'drop' : (c ? 'cnt' : '')) %>"><%= v == null ? '·' : v %></td><% }) %>
+<td class="tot"><%= r.total %></td></tr><% }) %>
+</tbody></table></div>
+<% } %>

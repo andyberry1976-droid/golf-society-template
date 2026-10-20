@@ -33,7 +33,7 @@ function parBogeyHole(gross, par, strokes) { if (gross == null) return -1; const
  * Score one card. card: { holes?: [gross|null x18], total?: {gross?, stableford?, net?} }.
  * course: { par, rating, slope, holes?: [{par, si}] }. ph: playing handicap.
  * Returns { gross, net, stableford, parBogey, holes:[{gross,net,pts}] } using hole-by-hole data when present,
- * otherwise the round-total approximations.
+ * otherwise the round-total approximations (same as the existing Demo engine).
  */
 function scoreCard(card, course, ph, { cap = null } = {}) {
   if (card.holes && course.holes) {
@@ -81,7 +81,7 @@ function lastN(holes, n, field) { return holes.slice(-n).reduce((s, h) => s + (h
 /**
  * Rank entries: [{ key, value, holes?, position_in? }]. Competition ranking (1,2,2,4).
  * tieBreak: 'none' | 'countback' (back 9, 6, 3, 1 — only when both have hole data).
- * A manually entered position_in always wins.
+ * A manually entered position_in always wins (as in the Demo engine).
  */
 function rank(entries, { lower = false, tieBreak = 'none', field = 'pts' } = {}) {
   const better = (a, b) => (lower ? a - b : b - a);

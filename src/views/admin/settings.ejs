@@ -1,0 +1,57 @@
+<%- include('_top') %>
+<form class="stack" method="post" action="/admin/settings" novalidate><%- include('../partials/csrf') %>
+<section class="card form" id="features"><h2>Features</h2>
+  <p class="hint" style="margin:0">Switch whole sections of the site on or off. Switched-off sections disappear from menus and pages; their data is kept, so switching back on restores everything.</p>
+  <input type="hidden" name="features_form" value="1"><div class="feat"><% FEATURES.forEach(function(ft){ %><label class="chk"><input type="checkbox" name="feature_<%= ft.key %>" value="1"<%= values['feature_' + ft.key] !== '0' ? ' checked' : '' %>> <span><b><%= ft.label %></b><% if (ft.hint) { %><small><%= ft.hint %></small><% } %></span></label><% }) %></div>
+</section>
+<section class="card form"><h2>Society name &amp; branding</h2>
+  <%- include('../partials/field', {name:'society_name', label:'Full society name', values: values, errors: errors, attrs:'required maxlength="80"'}) %>
+  <div class="cols2"><%- include('../partials/field', {name:'short_name', label:'Short name (header)', values: values, errors: errors, attrs:'required maxlength="30"'}) %><%- include('../partials/field', {name:'hero_title', label:'Home page headline (last word is pink)', values: values, errors: errors, attrs:'required maxlength="60"'}) %></div>
+  <div class="cols2"><%- include('../partials/field', {name:'hero_ribbon', label:'Ribbon under the headline', values: values, errors: errors}) %><%- include('../partials/field', {name:'est_text', label:'Sticker text', values: values, errors: errors}) %></div>
+  <%- include('../partials/field', {name:'tagline', label:'Tagline', type:'textarea', values: values, errors: errors}) %>
+  <%- include('../partials/field', {name:'join_blurb', label:'Join page blurb', type:'textarea', values: values, errors: errors}) %>
+  <%- include('../partials/field', {name:'footer_blurb', label:'Footer blurb', values: values, errors: errors}) %>
+  <div class="cols2"><%- include('../partials/field', {name:'currency', label:'Currency symbol', values: values, errors: errors, attrs:'maxlength="3"'}) %><%- include('../partials/field', {name:'contact_email', label:'Contact email (shown in footer)', values: values, errors: errors}) %></div>
+</section>
+<section class="card form"><h2>Joining</h2>
+  <%- include('../partials/field', {name:'invite_code', label:'Invite code', values: values, errors: errors, hint:'Applicants who enter this are flagged “invite code ✓”. Leave blank to disable codes.'}) %>
+  <label class="chk"><input type="checkbox" name="invite_auto_approve" value="1"<%= values.invite_auto_approve==='1' ? ' checked' : '' %>> Auto-approve applicants who enter the correct invite code</label>
+  <label class="chk"><input type="checkbox" name="members_only" value="1"<%= values.members_only==='1' ? ' checked' : '' %>> Members-only site (visitors only see the home page, login and join)</label>
+</section>
+<section class="card form"><h2>Handicap system</h2>
+<% if (hcpFixed) { %>
+  <p style="margin-top:8px;font-weight:700">Fixed handicaps: each player has one handicap and plays off it on every course. Results never change it; set it per player under Admin → Members.</p>
+  <% if (hcpLocked) { %><input type="hidden" name="handicap_mode" value="<%= values.handicap_mode %>"><% } else { %><div class="fld"><label for="f-hmode">Calculation</label><select class="in" id="f-hmode" name="handicap_mode"><% var hms = handicapModules, cur = hms.some(function(x){ return x.id===values.handicap_mode; }) ? values.handicap_mode : 'society'; hms.forEach(function(m){ %><option value="<%= m.id %>"<%= cur===m.id ? ' selected' : '' %>><%= m.label %></option><% }) %></select></div><% } %>
+  <%- include('../partials/field', {name:'max_index', label:'Max handicap', values: values, errors: errors, attrs:'inputmode="decimal"'}) %>
+  <input type="hidden" name="default_allowance" value="<%= values.default_allowance %>"><input type="hidden" name="default_start_index" value="<%= values.default_start_index %>">
+  <% if (values.soft_cap==='1') { %><input type="hidden" name="soft_cap" value="1"><% } %><% if (values.hard_cap==='1') { %><input type="hidden" name="hard_cap" value="1"><% } %>
+<% } else { %>
+  <div class="fld"><label for="f-hmode">Calculation</label><select class="in" id="f-hmode" name="handicap_mode"><% var hms = handicapModules, cur = hms.some(function(x){ return x.id===values.handicap_mode; }) ? values.handicap_mode : 'society'; hms.forEach(function(m){ %><option value="<%= m.id %>"<%= cur===m.id ? ' selected' : '' %>><%= m.label %></option><% }) %></select></div>
+  <fieldset><legend>Society rules</legend>
+    <div class="cols3"><%- include('../partials/field', {name:'buffer_low', label:'Buffer from (pts)', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'buffer_high', label:'Buffer to (pts)', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'under_add', label:'Added under buffer', values: values, errors: errors, attrs:'inputmode="decimal"'}) %></div>
+    <div class="cols2"><% [1,2,3,4].forEach(function(i){ %><div class="cols2"><%- include('../partials/field', {name:'cat'+i+'_max', label:'Cat '+i+' up to', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'cat'+i+'_cut', label:'Cat '+i+' cut / pt', values: values, errors: errors, attrs:'inputmode="decimal"'}) %></div><% }) %></div>
+    <div class="cols2"><%- include('../partials/field', {name:'forty_plus', label:'Extra cut at (pts)', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'forty_plus_cut', label:'Extra cut (shots)', values: values, errors: errors, attrs:'inputmode="decimal"'}) %></div>
+    <div class="cols2"><%- include('../partials/field', {name:'monthly_win_cut', label:'Monthly winner cut', values: values, errors: errors, attrs:'inputmode="decimal"'}) %><%- include('../partials/field', {name:'monthly_min_field', label:'…when field is at least', values: values, errors: errors, attrs:'inputmode="numeric"'}) %></div>
+    <p class="hint" style="margin:0">Majors/Euro winner cuts are set per tournament under Admin → Majors.</p>
+  </fieldset>
+  <h3 style="margin-top:10px">WHS-style options</h3>
+  <div class="cols3"><%- include('../partials/field', {name:'default_allowance', label:'Default allowance %', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'max_index', label:'Max handicap index', values: values, errors: errors, attrs:'inputmode="decimal"'}) %><%- include('../partials/field', {name:'default_start_index', label:'Default starting index', values: values, errors: errors, attrs:'inputmode="decimal"'}) %></div>
+  <label class="chk"><input type="checkbox" name="soft_cap" value="1"<%= values.soft_cap==='1' ? ' checked' : '' %>> Soft cap (rises above low index + 3.0 are halved)</label>
+  <label class="chk"><input type="checkbox" name="hard_cap" value="1"<%= values.hard_cap==='1' ? ' checked' : '' %>> Hard cap (never more than low index + 5.0)</label>
+
+<% } %>
+</section>
+<section class="card form"><h2>Rules page</h2>
+  <%- include('../partials/field', {name:'rules_text', label:'Rules (one per line)', type:'textarea', values: values, errors: errors}) %>
+</section>
+<section class="card form"><h2>Default Order of Merit scheme</h2>
+  <div class="fld"><label for="f-oommode">Scoring</label><select class="in" id="f-oommode" name="oom_mode"><option value="score"<%= values.oom_mode==='score' ? ' selected' : '' %>>Stableford scores (best N count) — society default</option><option value="points"<%= values.oom_mode!=='score' ? ' selected' : '' %>>Position points (table below)</option></select></div>
+  <label class="chk"><input type="checkbox" name="countback" value="1"<%= String(values.countback)==='1' || values.countback===true ? ' checked' : '' %>> Ties: count back on the next-best score (8th, 9th…), then most appearances</label>
+  <div class="fld"><label for="f-positions">Points by finishing position</label><input class="in" id="f-positions" name="positions" value="<%= values.positions %>"><% if (errors.positions) { %><p class="ferr" role="alert"><%= errors.positions %></p><% } %></div>
+  <div class="cols2"><%- include('../partials/field', {name:'participation', label:'Participation points', values: values, errors: errors, attrs:'inputmode="numeric"'}) %><%- include('../partials/field', {name:'best_n', label:'Best-N rounds (blank = all)', values: values, errors: errors, attrs:'inputmode="numeric"'}) %></div>
+  <p class="hint" style="margin:0">Seasons using the default scheme pick this up; seasons with their own scheme keep theirs.</p>
+</section>
+<button class="btn btn-pk" type="submit">Save settings</button>
+</form>
+<section class="card" style="margin-top:22px"><h2>Backup</h2><p style="margin-top:8px;font-weight:700">Download a consistent copy of the whole database (members, results, everything). Do this regularly — see the README for automatic backups.</p><p style="margin-top:12px"><a class="btn btn-yl" href="/admin/backup">Download backup (.db)</a></p></section>
+<%- include('_bot') %>

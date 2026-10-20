@@ -1,0 +1,29 @@
+<%- include('_top') %>
+<div class="stats dash" style="margin-top:0">
+  <div class="stat"><b><%= tiles.members %></b><span>Members</span></div>
+  <% if (F.on.join) { %><div class="stat"><b><%= tiles.pending %></b><span>Join requests</span></div><% } %>
+  <div class="stat"><b><%= tiles.upcoming %></b><span>Upcoming events</span></div>
+  <% if (F.on.rsvp) { %><div class="stat"><b><%= tiles.rsvps %></b><span>Places booked</span></div><% } %>
+  <div class="stat"><b><%= tiles.events %></b><span>Events played<%= season ? ' (' + season.name + ')' : '' %></span></div>
+  <div class="stat"><b><%= tiles.rounds %></b><span>Rounds recorded</span></div>
+  <div class="stat"><b><%= tiles.avgIdx ?? '—' %></b><span>Average index</span></div>
+  <div class="stat"><b><%= season ? season.name : '—' %></b><span>Current season</span></div>
+</div>
+<div class="two-col" style="margin-top:22px">
+<div class="stack">
+  <% if (isAdmin && F.on.join) { %>
+  <section class="card" aria-labelledby="rq"><div class="row-between"><h2 id="rq">Pending join requests</h2><a class="btn-link" href="/admin/requests">Manage →</a></div>
+    <% if (requests.length) { %><ul style="margin-top:12px;display:grid;gap:10px"><% requests.forEach(function(r){ %><li class="status-box"><b><%= r.name %></b> <span class="muted sm"><%= r.email %></span> <% if (r.invite_ok) { %><span class="badge ok">invite code ✓</span><% } %></li><% }) %></ul>
+    <% } else { %><p style="margin-top:8px;font-weight:700">All caught up — nobody waiting. 🎉</p><% } %></section>
+  <% } %>
+  <section class="card" aria-labelledby="aw-h"><h2 id="aw-h">Needs results</h2>
+    <% if (awaiting.length) { %><ul style="margin-top:12px;display:grid;gap:10px"><% awaiting.forEach(function(e){ %><li class="status-box wait row-between"><span><b><%= e.title %></b> <span class="muted sm"><%= dateShort(e.event_date) %> · <%= e.going %> going</span></span><a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/results">Enter results</a></li><% }) %></ul>
+    <% } else { %><p style="margin-top:8px;font-weight:700">Every past event has results. Lovely.</p><% } %></section>
+</div>
+<div class="stack">
+  <section class="card" aria-labelledby="up-h"><div class="row-between"><h2 id="up-h">Upcoming events</h2><span class="actions" style="gap:8px"><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/events">Events (Excel import/export)</a><% } %><a class="btn btn-pk btn-sm" href="/admin/events/new">+ New</a></span></div>
+    <% if (upcoming.length) { %><ul style="margin-top:12px;display:grid;gap:10px"><% upcoming.forEach(function(e){ %><li class="status-box"><a href="/events/<%= e.id %>" style="font-weight:900;text-decoration:underline"><%= e.title %></a><br><span class="muted sm"><%= dateShort(e.event_date) %> · <%= e.capacity != null ? e.going + '/' + e.capacity + ' places' : e.going + ' going' %><%= e.waitlist ? ' · ' + e.waitlist + ' waitlisted' : '' %></span></li><% }) %></ul>
+    <% } else { %><p style="margin-top:8px;font-weight:700">Nothing scheduled.</p><% } %></section>
+  <% if (audit.length) { %><section class="card" aria-labelledby="au-h"><h2 id="au-h">Recent activity</h2><ul style="margin-top:12px;display:grid;gap:6px"><% audit.forEach(function(a){ %><li class="sm"><b><%= a.name || 'Someone' %></b> · <%= a.action.replace(/_/g,' ') %> <span class="muted"><%= a.at.slice(0,16) %></span></li><% }) %></ul></section><% } %>
+</div></div>
+<%- include('_bot') %>

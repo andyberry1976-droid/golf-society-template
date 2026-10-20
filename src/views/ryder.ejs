@@ -1,0 +1,28 @@
+<%- include('partials/head') %>
+<% var half = function(v){ var w = Math.floor(v), h = v - w; return h ? (w ? w : '') + '½' : String(w); }; %>
+<%- include('partials/pagehero', {eyebrow: 'Team golf', heading: 'Ryder Cup', lead: cups.length ? 'Every ' + S.short_name + ' Ryder Cup on record: teams, captains, sessions and points.' : 'No Ryder Cups on record yet.', doodle: 's-trophy'}) %>
+<section class="sec yl-sec" style="margin-top:-40px;padding-top:70px"><div class="wrap stack">
+<% cups.forEach(function(c){ var winA = c.score_a > c.score_b; %>
+  <section class="card" aria-labelledby="rc<%= c.year %>" id="y<%= c.year %>">
+    <h2 id="rc<%= c.year %>"><%= c.name %></h2>
+    <p class="rc-score" style="font-size:1.25rem;font-weight:800;margin-top:6px"><%= c.team_a %> <%= half(c.score_a) %> – <%= half(c.score_b) %> <%= c.team_b %></p>
+    <p class="muted"><%= winA ? c.team_a : c.team_b %> won. Captains: <%= c.captainA %> and <%= c.captainB %>.</p>
+    <div class="cols2" style="margin-top:12px">
+    <% [[c.team_a, c.teamA, c.captainA], [c.team_b, c.teamB, c.captainB]].forEach(function(t){ %>
+      <div><h3><%= t[0] %></h3>
+        <div class="xs" tabindex="0" role="region" aria-label="<%= t[0] %> players"><table class="gt"><thead><tr><th class="st">Player</th><th>Points</th></tr></thead><tbody>
+        <% t[1].forEach(function(p){ %><tr><td class="st"><% if (p.status === 'active') { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %><%= p.name === t[2] ? ' (captain)' : '' %></td><td><%= half(p.points) %></td></tr><% }) %>
+        </tbody></table></div></div>
+    <% }) %>
+    </div>
+    <% c.sessions.forEach(function(s){ %>
+      <h3 style="margin-top:16px"><%= s.name %> <span class="muted sm">session <%= half(s.a) %>–<%= half(s.b) %> · running <%= half(s.ra) %>–<%= half(s.rb) %></span></h3>
+      <div class="xs" tabindex="0" role="region" aria-label="<%= s.name %> matches"><table class="gt"><thead><tr><th class="st"><%= c.team_a %></th><th class="st"><%= c.team_b %></th><th>Result</th></tr></thead><tbody>
+      <% s.matches.forEach(function(m){ %><tr><td class="st"><%- m.winner==='A' ? '<b>' : '' %><%= m.a.join(' & ') %><%- m.winner==='A' ? '</b>' : '' %></td><td class="st"><%- m.winner==='B' ? '<b>' : '' %><%= m.b.join(' & ') %><%- m.winner==='B' ? '</b>' : '' %></td><td><%= m.winner==='H' ? 'Halved' : (m.winner==='A' ? c.team_a.replace(/^Team /,'') : c.team_b.replace(/^Team /,'')) + ' ' + m.result %></td></tr><% }) %>
+      </tbody></table></div>
+    <% }) %>
+    <p class="note">Pairs matches score a point for each partner. <%= c.notes || '' %></p>
+  </section>
+<% }) %>
+</div></section>
+<%- include('partials/foot') %>

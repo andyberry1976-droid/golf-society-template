@@ -1,0 +1,19 @@
+<%- include('_top') %>
+<p class="hint">A tournament (Major, Euro…) is a set of events played as rounds. Enter each round’s stableford scores on the event’s results page; the leaderboard adds them up. When every round is completed the winner goes on the roll of honour, and (if “cut applies”) gets the winner’s handicap cut on the final round.</p>
+<% list.forEach(function(t){ %>
+<form class="card form" method="post" action="/admin/tournaments/<%= t.id %>" style="margin-top:16px" novalidate><%- include('../partials/csrf') %>
+  <h2><%= t.name %></h2>
+  <%- include('_tourfields', {t: t}) %>
+  <fieldset><legend>Rounds (tick the events)</legend>
+    <% t.events.forEach(function(e){ %><label class="chk"><input type="checkbox" name="rounds" value="<%= e.id %>"<%= e.tournament_id===t.id ? ' checked' : '' %>> <%= dateShort(e.event_date) %> · <%= e.title %></label><% }) %>
+  </fieldset>
+  <p class="hint">Leader: <%= t.board.rows[0] ? t.board.rows[0].name + ' (' + t.board.rows[0].total + ')' : '—' %></p>
+  <button class="btn btn-pk" type="submit">Save</button>
+</form>
+<% }) %>
+<form class="card form" method="post" action="/admin/tournaments" style="margin-top:16px" novalidate><%- include('../partials/csrf') %>
+  <h2>New tournament</h2>
+  <%- include('_tourfields', {t: {name:'', kind:'major', season_id: seasons[0] && seasons[0].id, winner_cut: 2, cut_applies: 1, cut_note: 'Winner gets cut 2 shots', honour_category_id: null}}) %>
+  <button class="btn btn-pk" type="submit">Create</button>
+</form>
+<%- include('_bot') %>

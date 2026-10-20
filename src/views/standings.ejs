@@ -1,0 +1,22 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'The big tables', heading: 'Handicaps & standings', lead: 'Arrows show how many places each player moved after the last event. Lower handicap is better, so a green “−” on the handicap is good news.', doodle: 's-trophy'}) %>
+<section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap">
+  <form method="get" action="/standings" class="sortrow" style="margin-bottom:22px;max-width:360px">
+    <div style="flex:1"><label for="season" style="font-weight:900;display:block">Season</label>
+      <select class="in" id="season" name="season" data-autosubmit>
+        <% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= season && season.id===s.id ? ' selected' : '' %>><%= s.name %><%= s.status==='closed' ? ' (closed)' : '' %></option><% }) %>
+      </select></div><noscript><button class="btn btn-yl btn-sm">Go</button></noscript>
+  </form>
+  <div class="two">
+    <div class="panel"><h3>Order of Merit</h3>
+      <p class="sub"><%= season ? season.name : '' %> · <%= eventsCounted %> event<%= eventsCounted===1 ? '' : 's' %> counted<%= season && season.status==='closed' ? ' · final' : '' %></p>
+      <%- include('partials/om-table', {rows: om.rows}) %>
+      <% if (scheme) { %><p class="hint" style="margin:14px 4px 0"><b>Scoring:</b> <%= describe(scheme) %><% if (omHolder) { %> Holder: <a href="/players/<%= omHolder.id %>"><%= omHolder.name %></a>.<% } %></p><% } %>
+    </div>
+    <div class="panel"><h3>Handicap leaderboard</h3><p class="sub"><%= hl.lastEvent ? 'After ' + hl.lastEvent.title : 'Lowest is best' %> · current handicap indexes</p>
+      <%- include('partials/hl-table', {rows: hl.rows, n: hl.rows.length}) %></div>
+  </div>
+  <% if (grid.rows.length) { %><div class="panel" style="margin-top:22px"><h3>Every score</h3><p class="sub">Green = counts towards the total<%= scheme && scheme.bestN ? ' (best ' + scheme.bestN + ')' : '' %>, struck through = dropped</p>
+    <%- include('partials/score-grid', {events: grid.events, rows: grid.rows, caption: 'Order of Merit scores by event', counted: function(r, i){ return r.counted[i]; }}) %></div><% } %>
+</div></section>
+<%- include('partials/foot') %>

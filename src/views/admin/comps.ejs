@@ -1,0 +1,22 @@
+<%- include('_top') %>
+<section class="card form"><h2>Pick an event</h2>
+<form method="get" action="/admin/comps" class="cols2">
+  <div class="fld"><label for="c-season">Season</label><select class="in" id="c-season" name="season" data-autosubmit><% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= season && season.id===s.id ? ' selected' : '' %>><%= s.name %></option><% }) %></select></div>
+  <div class="fld"><label for="c-event">Event</label><select class="in" id="c-event" name="event" data-autosubmit><% events.forEach(function(e){ %><option value="<%= e.id %>"<%= ev && ev.id===e.id ? ' selected' : '' %>><%= dateShort(e.event_date) %> · <%= e.title %></option><% }) %></select></div>
+  <noscript><button class="btn btn-yl btn-sm">Go</button></noscript>
+</form></section>
+<% if (ev) { %>
+<form class="card form" method="post" action="/admin/comps/<%= ev.id %>" style="margin-top:18px" novalidate><%- include('../partials/csrf') %>
+  <h2><%= ev.title %></h2>
+  <p class="hint">Birdie League: birdies count 1, eagles count 2 (the box shows the stored total under birdies). FedEx: top 10 score 10..1 — or press “Fill FedEx from positions” to work it out from the results. Leave blank for “didn’t play”.</p>
+  <div class="xs"><table class="gt"><thead><tr><th class="st">Player</th><th>Birdies</th><th>Eagles</th><th>FedEx pts</th></tr></thead><tbody>
+  <% members.forEach(function(m){ %><tr><th scope="row" class="st"><%= m.name %><%= m.played ? ' ✓' : '' %></th>
+    <td><input class="in num" aria-label="Birdies for <%= m.name %>" name="birdies_<%= m.id %>" inputmode="numeric" value="<%= cur.birdie.has(m.id) ? cur.birdie.get(m.id) : '' %>"></td>
+    <td><input class="in num" aria-label="Eagles for <%= m.name %>" name="eagles_<%= m.id %>" inputmode="numeric" value=""></td>
+    <td><input class="in num" aria-label="FedEx points for <%= m.name %>" name="fedex_<%= m.id %>" inputmode="numeric" value="<%= cur.fedex.has(m.id) ? cur.fedex.get(m.id) : '' %>"></td></tr><% }) %>
+  </tbody></table></div>
+  <p class="hint">✓ = has a result for this event.</p>
+  <div class="cta" style="margin-top:12px"><button class="btn btn-pk" type="submit">Save</button><button class="btn btn-wh" type="submit" name="fill_fedex" value="1">Fill FedEx from positions</button></div>
+</form>
+<% } else { %><p class="empty">No events in this season yet.</p><% } %>
+<%- include('_bot') %>

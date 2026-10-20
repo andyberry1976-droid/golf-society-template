@@ -1,0 +1,65 @@
+<%- include('_top') %>
+<form class="card form pad-lg" method="post" action="<%= ev ? '/admin/events/' + ev.id : '/admin/events' %>" novalidate><%- include('../partials/csrf') %>
+  <%- include('../partials/field', {name:'title', label:'Event name', values: values, errors: errors, attrs:'required maxlength="100"'}) %>
+  <div class="cols2">
+    <div class="fld"><label for="f-season_id">Season</label><select class="in" id="f-season_id" name="season_id"><% h.seasonOptions(seasons).forEach(function(s){ %><option value="<%= s.id %>"<%= String(values.season_id)===String(s.id) ? ' selected' : '' %>><%= s.name %></option><% }) %></select><% if (errors.season_id) { %><p class="ferr" role="alert"><%= errors.season_id %></p><% } %></div>
+    <div class="fld"><label for="f-course_id">Course</label><select class="in" id="f-course_id" name="course_id"><option value="">To be confirmed</option><% courses.forEach(function(c){ %><option value="<%= c.id %>"<%= String(values.course_id)===String(c.id) ? ' selected' : '' %>><%= c.name %> (<%= c.tee %>, par <%= c.par %>)</option><% }) %></select><p class="hint">Need a new course? <a href="/admin/courses" style="text-decoration:underline">Add one</a> <%= hcpFixed ? '' : '(rating & slope drive handicaps)' %>.</p></div>
+  </div>
+  <div class="cols3">
+    <%- include('../partials/field', {name:'event_date', label:'Date', type:'date', values: values, errors: errors, attrs:'required'}) %>
+    <%- include('../partials/field', {name:'tee_time', label:'First tee time', type:'time', values: values, errors: errors, attrs:'required'}) %>
+    <div class="fld"><label for="f-status">Status</label><select class="in" id="f-status" name="status"><option value="scheduled"<%= (values.status||'scheduled')==='scheduled' ? ' selected' : '' %>>Scheduled</option><option value="cancelled"<%= values.status==='cancelled' ? ' selected' : '' %>>Cancelled</option><% if (ev && ev.status==='completed') { %><option value="completed" selected>Completed</option><% } %></select><% if (errors.status) { %><p class="ferr" role="alert"><%= errors.status %></p><% } %></div>
+  </div>
+  <div class="cols2">
+    <div class="fld"><label for="f-format">Format</label><select class="in" id="f-format" name="format"><% formats.forEach(function(f){ %><option value="<%= f.key %>" data-basis="<%= f.basis %>" data-hcp="<%= f.hcp %>"<%= values.format===f.key ? ' selected' : '' %>><%= f.label %></option><% }) %></select></div>
+    <div class="fld"><label for="f-scoring_basis">Winner decided by</label><select class="in" id="f-scoring_basis" name="scoring_basis"><% bases.forEach(function(b){ %><option value="<%= b.key %>"<%= values.scoring_basis===b.key ? ' selected' : '' %>><%= b.label %></option><% }) %></select></div>
+  </div>
+  <div class="cols3">
+    <%- include('../partials/field', {name:'cost', label:'Cost per player (' + cur + ')', values: values, errors: errors, attrs:'inputmode="decimal"', hint:'0 or blank = free'}) %>
+    <%- include('../partials/field', {name:'capacity', label:'Places (capacity)', values: values, errors: errors, attrs:'inputmode="numeric"', hint:'Blank = unlimited. Extra sign-ups join a waitlist.'}) %>
+    <% if (hcpFixed) { %><input type="hidden" name="allowance_pct" value="<%= values.allowance_pct || 100 %>"><% } else { %><%- include('../partials/field', {name:'allowance_pct', label:'Handicap allowance %', values: values, errors: errors, attrs:'inputmode="numeric"', hint:'95 = standard individual play'}) %><% } %>
+  </div>
+  <%- include('../partials/field', {name:'notes', label:'Notes for players', type:'textarea', values: values, errors: errors, attrs:'maxlength="600"'}) %>
+  <fieldset><legend>Scoring &amp; trophies</legend>
+    <div class="stack" style="--g:8px">
+    <% if (hcpFixed) { %><% if (values.counts_handicap) { %><input type="hidden" name="counts_handicap" value="1"><% } %><% } else { %><label class="chk"><input type="checkbox" id="f-counts_handicap" name="counts_handicap" value="1"<%= values.counts_handicap ? ' checked' : '' %>> Counts for handicap (scores feed the WHS-style index)</label><% } %>
+    <label class="chk"><input type="checkbox" id="f-counts_oom" name="counts_oom" value="1"<%= values.counts_oom ? ' checked' : '' %>> Counts for the Order of Merit</label>
+    <% [['counts_birdie', 'birdie', 'Counts for the Birdie League'], ['counts_fedex', 'fedex', 'Counts for the FedEx Cup']].forEach(function(c){ if (F.on[c[1]]) { %><label class="chk"><input type="checkbox" id="f-<%= c[0] %>" name="<%= c[0] %>" value="1"<%= values[c[0]] ? ' checked' : '' %>> <%= c[2] %></label><% } else if (values[c[0]]) { %><input type="hidden" name="<%= c[0] %>" value="1"><% } }) %>
+    <div class="cols2">
+      <%- include('../partials/field', {name:'points_multiplier', label:'Order of Merit multiplier', values: values, errors: errors, attrs:'inputmode="decimal"', hint:'1 = normal, 2 = a “major” worth double'}) %>
+      <div class="fld"><label for="f-honour_category_id">Roll of honour trophy</label><select class="in" id="f-honour_category_id" name="honour_category_id"><option value="">None</option><% categories.filter(function(c){return c.kind==='event'}).forEach(function(c){ %><option value="<%= c.id %>"<%= String(values.honour_category_id)===String(c.id) ? ' selected' : '' %>><%= c.name %></option><% }) %></select><p class="hint">The winner is added to the roll of honour automatically.</p></div>
+    </div></div>
+  </fieldset>
+  <div class="actions"><button class="btn btn-pk" type="submit"><%= ev ? 'Save event' : 'Create event' %></button><a class="btn btn-wh" href="<%= ev ? '/events/' + ev.id : '/admin/events' %>">Cancel</a></div>
+</form>
+<% if (ev && typeof field !== 'undefined') { %>
+<section class="card form pad-lg" id="players" aria-labelledby="pl-h" style="margin-top:22px">
+  <div class="row-between"><h2 id="pl-h">Players <span class="badge dk"><%= field.length %></span></h2><a class="btn btn-yl btn-sm" href="/admin/events/<%= ev.id %>/results">Enter scores</a></div>
+  <p class="actions" style="margin:6px 0 10px;display:flex;flex-wrap:wrap;gap:8px"><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/events/<%= ev.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/scores/import?event=<%= ev.id %>">Import players &amp; scores (Excel)</a><% } %><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/events/<%= ev.id %>/scores.xlsx?blank=1" download>Blank template</a><% } %></p>
+  <p class="hint" style="margin:0">Who is playing in this event. Removing a player also deletes their score and any Birdie League / FedEx entry for this event; the Order of Merit, FedEx, Birdie League and other tables recalculate straight away.</p>
+  <% if (field.length) { %>
+  <table class="rt" style="margin-top:10px"><thead><tr><th>Player</th><th>Handicap</th><th>Plays off</th><th>Score</th><th><span class="sr">Remove</span></th></tr></thead><tbody>
+  <% field.forEach(function(p){ var sc = p.res ? (p.res.stableford != null ? p.res.stableford + ' pts' : (p.res.gross != null ? p.res.gross + ' gross' : (p.res.position ? 'pos ' + p.res.position : 'entered'))) : null;
+     var extras = []; if (p.comps.birdie != null) extras.push('Birdie League ' + p.comps.birdie); if (p.comps.fedex != null) extras.push('FedEx ' + p.comps.fedex);
+     var msg = 'Remove ' + p.name + ' from this event?' + (sc ? ' Their score (' + sc + ') will be DELETED' + (extras.length ? ', along with ' + extras.join(' and ') : '') + ', and the standings will be recalculated.' : (extras.length ? ' Their ' + extras.join(' and ') + ' entry will be deleted.' : '')); %>
+    <tr><td class="first" data-l="Player"><%= p.name %><% if (p.status !== 'active') { %> <span class="muted sm">(inactive)</span><% } %></td>
+      <td data-l="Handicap"><%= p.handicap_index != null ? fmtIdx(p.handicap_index) : '—' %></td>
+      <td data-l="Plays off"><%= p.playing != null ? p.playing : '—' %></td>
+      <td data-l="Score"><%= sc || '—' %><% if (extras.length) { %> <span class="muted sm">· <%= extras.join(' · ') %></span><% } %></td>
+      <td data-l="Remove"><form method="post" action="/admin/events/<%= ev.id %>/players/<%= p.id %>/remove" class="inline-form" data-confirm="<%= msg %>"><%- include('../partials/csrf') %><button class="btn btn-dn btn-sm" type="submit">Remove <span class="sr"><%= p.name %></span></button></form></td></tr>
+  <% }) %></tbody></table>
+  <% } else { %><p style="margin-top:10px;font-weight:700">No players yet.</p><% } %>
+  <% if (candidates.length) { %>
+  <form method="post" action="/admin/events/<%= ev.id %>/players" style="margin-top:14px"><%- include('../partials/csrf') %>
+    <div class="fld"><label for="add-players">Add players</label>
+      <select class="in" id="add-players" name="user_ids" multiple size="<%= Math.min(8, candidates.length) %>"><% candidates.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %> — <%= c.handicap_index != null ? 'hcp ' + fmtIdx(c.handicap_index) + ', plays off ' + Math.round(c.handicap_index + 1e-9) : 'no handicap' %></option><% }) %></select>
+      <p class="hint">Members not yet in this event. Hold Ctrl (⌘ on a Mac) to pick several. They play off their current handicap.</p></div>
+    <button class="btn btn-pk btn-sm" type="submit">Add to event</button>
+  </form>
+  <% } else { %><p class="hint" style="margin-top:10px">Every active member is already in this event.</p><% } %>
+</section>
+<% } %>
+<% if (ev && isAdmin) { %>
+<form method="post" action="/admin/events/<%= ev.id %>/delete" data-confirm="Delete this event and all its RSVPs? This cannot be undone." style="margin-top:22px"><%- include('../partials/csrf') %><button class="btn btn-dn btn-sm" type="submit">Delete event</button></form>
+<% } %>
+<%- include('_bot') %>

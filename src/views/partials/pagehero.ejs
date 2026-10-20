@@ -1,0 +1,8 @@
+<section class="page-hero">
+  <svg class="doodle d1 bob" viewBox="0 0 48 48" aria-hidden="true"><use href="#<%= typeof doodle !== 'undefined' ? doodle : 's-trophy' %>"/></svg>
+  <div class="wrap">
+    <span class="eyebrow"><%= eyebrow %></span>
+    <h1><%= heading %></h1>
+    <% if (typeof lead !== 'undefined' && lead) { %><p class="lead"><%= lead %></p><% } %>
+  </div>
+</section>

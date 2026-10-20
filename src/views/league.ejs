@@ -1,4 +1,0 @@
-<%- include('partials/head', { title: league.name }) %>
-<section class="card"><h1><%= league.name %></h1><p><%= events.length %> event(s) count<%= cfg.bestN ? ', best ' + cfg.bestN + ' scores' : '' %>.</p>
-<table><thead><tr><th>#</th><th>Player</th><th>Played</th><th>Points</th></tr></thead><tbody><% rows.forEach(function (r, i) { %><tr><td><%= i + 1 %></td><td><%= r.name %></td><td><%= r.played %></td><td><strong><%= r.total %></strong></td></tr><% }) %></tbody></table></section>
-<%- include('partials/foot') %>

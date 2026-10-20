@@ -1,0 +1,18 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Something for everyone', heading: 'Competitions', lead: (season ? season.name + ' season. ' : '') + 'Order of Merit, FedEx Cup, Birdie League, Matchplay, Majors and the Euro.', doodle: 's-trophy'}) %>
+<div class="page-body"><div class="wrap lift">
+  <div class="cgrid">
+    <% if (F.link('/standings')) { %><a class="card cc" href="/standings"><span aria-hidden="true">💷</span><h2>Order of Merit</h2><p>Best 7 stableford scores count. 8th breaks ties.</p></a><% } %>
+    <% if (F.link('/fedex')) { %><a class="card cc" href="/fedex"><span aria-hidden="true">📦</span><h2>FedEx Cup</h2><p><%= fedex ? 'Leader: ' + fedex.name + ' (' + fedex.total + ')' : 'Top 10 score 10…1' %></p></a><% } %>
+    <% if (F.link('/birdie-league')) { %><a class="card cc" href="/birdie-league"><span aria-hidden="true">🐦</span><h2>Birdie League</h2><p><%= birdie ? 'Leader: ' + birdie.name + ' (' + birdie.total + ')' : 'Eagles count 2' %></p></a><% } %>
+    <% if (F.link('/matchplay')) { %><a class="card cc" href="/matchplay"><span aria-hidden="true">⚔️</span><h2>Matchplay</h2><p><%= mp ? (mp.champion ? 'Champion: ' + mp.champion : mp.comp.name + ' — in progress') : 'Knockout' %></p></a><% } %>
+    <% tours.forEach(function(t){ var w = t.board.complete ? t.board.rows.filter(function(r){return r.rank===1}) : []; %>
+    <% if (F.link('/majors')) { %><a class="card cc" href="/majors#t<%= t.id %>"><span aria-hidden="true"><%= t.kind==='euro' ? '🇪🇺' : '🏆' %></span><h2><%= t.name %></h2><p><%= w.length ? 'Winner: ' + w.map(function(r){return r.name}).join(' & ') + ' (' + w[0].total + ')' : 'Coming up' %></p></a><% } %>
+    <% }) %>
+    <% if (F.link('/handicaps')) { %><a class="card cc" href="/handicaps"><span aria-hidden="true">📋</span><h2>Handicap Records</h2><p>Every handicap, category, lowest ever and title.</p></a><% } %>
+    <% if (F.link('/ryder-cup')) { %><a class="card cc" href="/ryder-cup"><span aria-hidden="true">🇺🇸</span><h2>Ryder Cup</h2><p>Team matches, 2010 and 2011.</p></a><% } %>
+    <% if (F.link('/hall-of-fame')) { %><a class="card cc" href="/hall-of-fame"><span aria-hidden="true">⭐</span><h2>Hall of fame</h2><p>Titles and the hole-in-one club.</p></a><% } %>
+    <% if (F.link('/rules')) { %><a class="card cc" href="/rules"><span aria-hidden="true">📜</span><h2>Rules</h2><p>Ties, cuts and the handicap table.</p></a><% } %>
+  </div>
+</div></div>
+<%- include('partials/foot') %>

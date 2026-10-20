@@ -1,0 +1,8 @@
+<table class="t"><thead><tr><th class="rk">Pos</th><th>Player</th><th>Handicap</th><th>Moved</th><th>Last event</th></tr></thead><tbody>
+<% rows.forEach(function(p){ %><tr>
+  <td class="rk"><span class="rank<%= p.rank<=3 ? ' r'+p.rank : '' %>"><%= p.rank %></span></td>
+  <td class="pl-n"><%- include('player', {id: p.user_id, name: p.name, nick: p.nickname, size: 'sm'}) %></td>
+  <td class="big"><span class="num"><%= p.handicap_index.toFixed(1) %></span></td>
+  <td class="sm2 a" data-l="Moved"><%- include('move', {n: p.moved}) %></td>
+  <td class="sm2 b" data-l="Last event"><span class="mv <%= p.change<0 ? 'up' : (p.change>0 ? 'dn' : 'eq') %>"><%= p.change===0 ? '±0.0' : sgn(p.change) %></span></td></tr><% }) %>
+</tbody></table>

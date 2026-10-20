@@ -1,0 +1,84 @@
+<%- include('partials/head') %>
+<section class="page-hero">
+  <div class="wrap">
+    <a class="btn-link" href="/players">← All players</a>
+    <div class="prof-head" style="margin-top:12px">
+      <span class="av lg" style="<%= avatarStyle(p.id) %>;border-color:#fff" aria-hidden="true"><%= initials(p.name) %></span>
+      <div>
+        <h1 style="margin:0;font-size:clamp(34px,8vw,56px)"><%= p.name %></h1>
+        <p class="lead" style="margin-top:4px"><% if (p.nickname) { %>“<%= p.nickname %>” · <% } %><%= p.home_course ? 'Home course: ' + p.home_course + ' · ' : '' %>Member since <%= p.joined_on ? p.joined_on.slice(0,4) : '—' %> <% if (p.role!=='member') { %><span class="badge <%= p.role %>"><%= roleLabel(p.role) %></span><% } %></p>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="page-body"><div class="wrap lift stack">
+  <section class="card" aria-label="Stats">
+    <div class="row-between"><h2>The numbers</h2><% if (own) { %><a class="btn btn-yl btn-sm" href="/account">Edit my profile</a><% } %></div>
+    <% if (p.bio) { %><p style="margin-top:8px;font-weight:700"><%= p.bio %></p><% } %>
+    <% if (F.on.profile_stats) { %><div class="stats six">
+      <div class="stat"><b><%= fmtIdx(p.handicap_index) %></b><span>Handicap</span></div>
+      <div class="stat"><b><%= st.rounds %></b><span>Rounds</span></div>
+      <div class="stat"><b><%= st.wins %></b><span>Wins</span></div>
+      <% if (S.handicap_mode === 'whs') { %><div class="stat"><b><%= st.bestGross ?? '—' %></b><span>Best gross</span></div><% } %>
+      <div class="stat"><b><%= st.bestStableford ?? '—' %></b><span>Best pts</span></div>
+      <div class="stat"><b><%= st.avgStableford ?? '—' %></b><span>Avg stableford</span></div>
+      <% if (S.handicap_mode === 'whs') { %><div class="stat"><b><%= st.avgNet ?? '—' %></b><span>Avg net</span></div><% } %>
+      <div class="stat"><b><%= st.podiums %></b><span>Podiums</span></div>
+      <div class="stat"><b><%= extra.titles || titles.length %></b><span>Titles</span></div>
+      <div class="stat"><b><%= extra.playing ?? '—' %></b><span>Playing hcp</span></div>
+      <% if (!hcpFixed) { %><div class="stat"><b><%= extra.cat ?? '—' %></b><span>Category</span></div><% } %>
+      <div class="stat"><b><%= extra.lowest != null ? fmtIdx(extra.lowest) : '—' %></b><span>Lowest ever</span></div>
+    </div><% } %>
+    <% if (extra.badges.length) { %><ul class="bdg" aria-label="Achievements"><% extra.badges.forEach(function(b){ %><li><span aria-hidden="true"><%= b.icon %></span><%= b.label %></li><% }) %></ul><% } %>
+    <% if (extra.season && F.on.profile_stats) { var st2 = extra.seasonTotals; %><p class="hint" style="margin-top:12px"><b><%= extra.season.name %>:</b>
+      Order of Merit <%= st2.oom ? ordinal(st2.oom.rank) + ' (' + st2.oom.total + ' pts)' : '—' %> ·
+      FedEx <%= st2.fedex ? ordinal(st2.fedex.rank) + ' (' + st2.fedex.total + ')' : '—' %> ·
+      Birdie League <%= st2.birdie ? ordinal(st2.birdie.rank) + ' (' + st2.birdie.total + ')' : '—' %>
+      <% if (extra.jan != null) { %> · Handicap at 1 Jan <%= fmtIdx(extra.jan) %><% } %></p><% } %>
+  </section>
+
+  <div class="two-col">
+    <section class="card" aria-labelledby="hh">
+      <h2 id="hh">Handicap history</h2>
+      <% if (history.length > 1) { const first = history[0].index_after, lastv = history[history.length-1].index_after, delta = lastv - first; %>
+      <div class="spark"><div class="t"><span>Index over time</span><span class="<%= delta<0 ? 'good' : (delta>0 ? 'bad' : '') %>"><%= first.toFixed(1) %> → <%= lastv.toFixed(1) %> (<%= sgn(Math.round(delta*10)/10) %>)</span></div>
+        <%- spark(history.map(function(h){return h.index_after}), 'g'+p.id) %>
+        <div class="ax"><span>Earliest</span><span>Latest</span></div>
+        <p class="hint" style="margin-top:6px">Higher on the chart = better (a lower handicap).</p></div>
+      <% } %>
+      <% if (history.length) { %>
+      <table class="rt" style="margin-top:12px"><thead><tr><th>Date</th><th>What</th><% if (!hcpFixed) { %><th>Diff</th><% } %><th><%= hcpFixed ? 'Handicap' : 'Index' %></th></tr></thead><tbody>
+        <% history.slice().reverse().slice(0, 12).forEach(function(h){ const ch = h.index_before!=null ? Math.round((h.index_after-h.index_before)*10)/10 : null; %>
+        <tr><td class="first" data-l="Date"><%= dateShort(h.effective_on) %></td><td data-l="What"><%= h.label || h.source %></td>
+        <% if (!hcpFixed) { %><td data-l="Differential"><%= h.differential!=null ? h.differential.toFixed(1) : '—' %></td><% } %>
+        <td data-l="Index"><b><%= h.index_after.toFixed(1) %></b> <% if (ch) { %><span class="mv <%= ch<0 ? 'up' : 'dn' %>"><%= sgn(ch) %></span><% } %></td></tr><% }) %>
+      </tbody></table>
+      <p class="hint" style="margin-top:10px"><% if (hcpFixed) { %>One handicap, played off on every course. Only the admin changes it.<% } else if (S.handicap_mode === 'whs') { %>Index = average of the best 8 of the last 20 score differentials (WHS table when fewer than 20). <%= diffs %> differentials on record.<% } else { %>Society handicap: adjusted after every counting round using the buffer zone and category cuts — see <a href="/rules" style="text-decoration:underline">Rules</a>.<% } %></p>
+      <% } else { %><p class="empty" style="margin-top:12px">No handicap yet.</p><% } %>
+    </section>
+
+    <div class="stack">
+      <section class="card" aria-labelledby="th"><h2 id="th">Society titles</h2>
+        <% if (titles.length) { %><ul class="tl" style="margin-top:12px"><% titles.forEach(function(t){ %><li><svg class="ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-trophy"/></svg><%= t.year %> <%= t.name %></li><% }) %></ul>
+        <% } else { %><p style="margin-top:8px;font-weight:700">No titles yet — the hunt continues. Keep swinging!</p><% } %>
+      </section>
+      <section class="card" aria-labelledby="ah"><h2 id="ah">Special awards</h2>
+        <% if (awards.length) { %><ul class="tl" style="margin-top:12px"><% awards.forEach(function(a){ %><li><%- iconHtml(a.icon) %><%= a.season %> · <%= a.name %></li><% }) %></ul>
+        <% } else { %><p style="margin-top:8px;font-weight:700">No special awards. Yet.</p><% } %>
+      </section>
+    </div>
+  </div>
+
+  <% if (F.on.profile_stats) { %><section class="card" aria-labelledby="rh">
+    <h2 id="rh">Recent results</h2>
+    <% if (results.length) { %>
+    <table class="rt" style="margin-top:10px"><thead><tr><th>Date</th><th>Event</th><th>Pos</th><th>Gross</th><th>Net</th><th>Stb</th><th>HCP</th><th>OoM</th></tr></thead><tbody>
+      <% results.slice(0, 15).forEach(function(r){ %><tr><td class="first" data-l="Date"><%= dateShort(r.event_date) %></td>
+      <td data-l="Event"><a class="rowlink" href="/events/<%= r.eid %>" style="text-decoration:underline;font-weight:900"><%= r.title %></a></td>
+      <td data-l="Position"><%= r.position ? ordinal(r.position) : '—' %></td><td data-l="Gross"><%= r.gross ?? '—' %></td><td data-l="Net"><%= r.net ?? '—' %></td><td data-l="Stableford"><%= r.stableford ?? '—' %></td>
+      <td data-l="Index"><%= r.idx_at_event!=null ? r.idx_at_event.toFixed(1) : '—' %></td><td data-l="OoM pts"><%= r.points %></td></tr><% }) %>
+    </tbody></table>
+    <% } else { %><p style="margin-top:8px;font-weight:700">No results yet.</p><% } %>
+  </section><% } %>
+</div></div>
+<%- include('partials/foot') %>

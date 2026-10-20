@@ -1,0 +1,19 @@
+<%- include('_top') %>
+<section class="card" aria-labelledby="p-h"><h2 id="p-h">Waiting for approval</h2>
+  <% if (pending.length) { pending.forEach(function(r){ %>
+  <div class="req"><div><h3><%= r.name %> <% if (r.invite_ok) { %><span class="badge ok">invite code ✓</span><% } %></h3>
+    <p class="muted"><%= r.email %> · applied <%= r.created_at.slice(0,10) %><%= r.home_course ? ' · home: ' + r.home_course : '' %></p>
+    <% if (r.message) { %><p style="margin-top:6px;font-weight:700">“<%= r.message %>”</p><% } %></div>
+    <form method="post" action="/admin/requests/<%= r.id %>/approve" class="acts"><%- include('../partials/csrf') %>
+      <div class="fld"><label for="idx-<%= r.id %>">Starting index</label><input class="in" id="idx-<%= r.id %>" name="index" inputmode="decimal" value="<%= r.declared_index != null ? r.declared_index : '' %>" placeholder="<%= S.default_start_index %>"></div>
+      <div class="fld"><label for="role-<%= r.id %>">Role</label><select class="in" id="role-<%= r.id %>" name="role"><option value="member">Member</option><option value="captain">Captain</option></select></div>
+      <button class="btn btn-pk btn-sm" type="submit">Approve</button>
+      <button class="btn btn-dn btn-sm" type="submit" formaction="/admin/requests/<%= r.id %>/reject" formnovalidate>Decline</button>
+    </form></div>
+  <% }) } else { %><p style="margin-top:8px;font-weight:700">Nobody waiting. 🎉</p><% } %>
+  <p class="hint" style="margin-top:14px">Approving creates the account straight away, with the password the applicant chose. Leave the starting index blank to use the default (<%= S.default_start_index %>).</p>
+</section>
+<% if (decided.length) { %><section class="card"><h2>Recently decided</h2>
+  <table class="rt" style="margin-top:8px"><thead><tr><th>Name</th><th>Email</th><th>Decision</th><th>When</th></tr></thead><tbody>
+  <% decided.forEach(function(r){ %><tr><td class="first" data-l="Name"><%= r.name %></td><td data-l="Email"><%= r.email %></td><td data-l="Decision"><span class="badge <%= r.status==='approved' ? 'ok' : 'bad' %>"><%= r.status %></span></td><td data-l="When"><%= (r.decided_at||'').slice(0,10) %></td></tr><% }) %></tbody></table></section><% } %>
+<%- include('_bot') %>

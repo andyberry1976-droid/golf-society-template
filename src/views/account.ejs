@@ -1,0 +1,37 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Your corner of the clubhouse', heading: 'My account', lead: 'Handicap ' + fmtIdx(me.handicap_index) + ' · ' + roleLabel(me.role), doodle: 's-flam'}) %>
+<div class="page-body"><div class="wrap lift stack">
+  <div class="two-col">
+  <div class="stack">
+    <% if (typeof mySubs !== 'undefined' && mySubs) { var sr = mySubs.row; %><section class="card" aria-labelledby="s-h"><h2 id="s-h">My subs (<%= mySubs.season.name %>)</h2>
+      <p style="margin-top:8px"><span class="badge <%= sr && sr.paid ? 'ok' : 'bad' %>"><%= sr && sr.paid ? 'Paid' : 'Not paid yet' %></span><% if (sr && sr.paid && sr.paid_on) { %> on <%= dateShort(sr.paid_on) %><% } %><% if (sr && sr.paid && sr.amount != null) { %> · £<%= sr.amount.toFixed(2) %><% } %></p>
+      <p class="hint">Only you and the committee can see this. Think it’s wrong? Have a word with the admin.</p></section><% } %>
+    <section class="card" aria-labelledby="n-h"><h2 id="n-h">Notices</h2>
+      <% if (notices.length) { %><ul style="margin-top:12px;display:grid;gap:10px"><% notices.forEach(function(n){ %><li class="status-box<%= n.read_at ? '' : ' in' %>"><%= n.message %><% if (n.link) { %> <a href="<%= n.link %>" style="text-decoration:underline">View</a><% } %> <span class="muted sm"><%= n.created_at.slice(0,10) %></span></li><% }) %></ul>
+      <% } else { %><p style="margin-top:8px;font-weight:700">Nothing new. We’ll tell you here if you’re bumped in from a waitlist.</p><% } %></section>
+    <% if (F.on.rsvp) { %><section class="card" aria-labelledby="m-h"><h2 id="m-h">My upcoming events</h2>
+      <% if (mine.length) { %><ul class="people" style="margin-top:12px"><% mine.forEach(function(m){ %><li><a class="person" href="/events/<%= m.id %>"><span><%= m.title %><small><%= dateShort(m.event_date) %> · <%= m.tee_time %> · <%= m.status==='going' ? '✅ going' : '⏳ waitlist' %></small></span></a></li><% }) %></ul>
+      <% } else { %><p style="margin-top:8px;font-weight:700">You’re not down for anything yet. <a href="/events" style="text-decoration:underline">Browse events</a>.</p><% } %></section><% } %>
+    <p><a class="btn-link" href="/players/<%= me.id %>">View my public profile →</a></p>
+  </div>
+  <div class="stack">
+    <form class="card form" method="post" action="/account" novalidate><%- include('partials/csrf') %>
+      <h2>My profile</h2>
+      <%- include('partials/field', {name:'name', label:'Name', values: values, errors: errors, autocomplete:'name', attrs:'required maxlength="80"'}) %>
+      <%- include('partials/field', {name:'nickname', label:'Nickname', values: values, errors: errors, attrs:'maxlength="40"'}) %>
+      <%- include('partials/field', {name:'home_course', label:'Home course', values: values, errors: errors, attrs:'maxlength="80"'}) %>
+      <%- include('partials/field', {name:'bio', label:'About me', type:'textarea', values: values, errors: errors, attrs:'maxlength="400"'}) %>
+      <button class="btn btn-pk" type="submit">Save profile</button>
+    </form>
+    <form class="card form" method="post" action="/account/password" novalidate><%- include('partials/csrf') %>
+      <h2>Change password</h2>
+      <% const pe = typeof pwErrors !== 'undefined' ? errors : {}; %>
+      <%- include('partials/field', {name:'current_password', label:'Current password', type:'password', values: {}, errors: pe, autocomplete:'current-password', attrs:'required'}) %>
+      <%- include('partials/field', {name:'new_password', label:'New password', type:'password', values: {}, errors: pe, autocomplete:'new-password', hint:'At least 10 characters.', attrs:'required minlength="10"'}) %>
+      <%- include('partials/field', {name:'new_password2', label:'Repeat new password', type:'password', values: {}, errors: pe, autocomplete:'new-password', attrs:'required minlength="10"'}) %>
+      <button class="btn btn-wh" type="submit">Change password</button>
+    </form>
+    <form method="post" action="/logout"><%- include('partials/csrf') %><button class="btn btn-dn" type="submit">Log out</button></form>
+  </div></div>
+</div></div>
+<%- include('partials/foot') %>

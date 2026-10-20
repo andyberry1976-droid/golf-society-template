@@ -1,0 +1,26 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'New members', heading: 'Join the society', lead: S.join_blurb, doodle: 's-flam'}) %>
+<div class="page-body"><div class="wrap lift" style="max-width:720px">
+  <form class="card form pad-lg" method="post" action="/join" novalidate>
+    <%- include('partials/csrf') %>
+    <h2>Apply to join</h2>
+    <p class="fine" style="margin:0">An admin approves every application. You’ll be able to log in with the password you choose here once approved. Got an invite code from a member? Pop it in below.</p>
+    <div class="cols2">
+      <%- include('partials/field', {name:'name', label:'Your name', values: values, errors: errors, autocomplete:'name', attrs:'required maxlength="80"'}) %>
+      <%- include('partials/field', {name:'email', label:'Email', type:'email', values: values, errors: errors, autocomplete:'email', attrs:'required inputmode="email"'}) %>
+    </div>
+    <div class="cols2">
+      <%- include('partials/field', {name:'password', label:'Choose a password', type:'password', values: {}, errors: errors, autocomplete:'new-password', hint:'At least 10 characters.', attrs:'required minlength="10"'}) %>
+      <%- include('partials/field', {name:'password2', label:'Repeat password', type:'password', values: {}, errors: errors, autocomplete:'new-password', attrs:'required minlength="10"'}) %>
+    </div>
+    <div class="cols2">
+      <%- include('partials/field', {name:'handicap', label:'Handicap index (if you have one)', values: values, errors: errors, hint:'e.g. 18.4 — leave blank if you don’t have one; an admin will set a starting handicap.', attrs:'inputmode="decimal"'}) %>
+      <%- include('partials/field', {name:'home_course', label:'Home course (optional)', values: values, errors: errors, attrs:'maxlength="80"'}) %>
+    </div>
+    <%- include('partials/field', {name:'invite_code', label:'Invite code (optional)', values: values, errors: errors, attrs:'autocomplete="off" maxlength="40"'}) %>
+    <%- include('partials/field', {name:'message', label:'Anything you’d like us to know? (optional)', type:'textarea', values: values, errors: errors, attrs:'maxlength="500"'}) %>
+    <button class="btn btn-pk btn-full" type="submit">Send my application</button>
+    <p class="fine" style="margin:0">Already a member? <a href="/login" style="text-decoration:underline">Log in</a></p>
+  </form>
+</div></div>
+<%- include('partials/foot') %>

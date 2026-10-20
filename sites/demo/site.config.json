@@ -1,0 +1,96 @@
+{
+  "$schema": "../../src/site.schema.json",
+  "slug": "demo",
+  "name": "The Demo Golf Society",
+  "branding": {
+    "short_name": "The Demo",
+    "hero_title": "The Demo",
+    "hero_ribbon": "Golf Society",
+    "est_text": "Monthly stableford · Majors · Matchplay",
+    "tagline": "Monthly stableford, two Majors, a Euro trip, a knockout matchplay and a Birdie League. Best seven scores count — bring your A-game and your excuses.",
+    "footer_blurb": "The Demo Golf Society. Rebrand me in Admin → Settings.",
+    "join_blurb": "Fancy a game? New Demo welcome. Ask a member for the invite code.",
+    "logo": "logo.svg",
+    "theme_color": "#1a1f2b",
+    "colors": {
+      "primary": "#1b2a4a",
+      "primary_dark": "#0f1a30",
+      "accent": "#b5893b",
+      "highlight": "#e6d8b8",
+      "ink": "#1a1f2b",
+      "background": "#f4ede0",
+      "primary_deep": "#0f1a30",
+      "header": "#1a1f2bf5",
+      "hero_from": "#1b2a4a",
+      "hero_to": "#0f1a30",
+      "hero_glow": "#b5893b55",
+      "hero_glow_2": "#b5893b4d",
+      "hero_glow_highlight": "#e6d8b833",
+      "on_accent": "#1a1f2b",
+      "accent_dark": "#7a5a1f",
+      "accent_light": "#efe3c6",
+      "accent_text": "#7a5a1f",
+      "accent_bright": "#d9b56a",
+      "muted": "#555b66",
+      "line": "#e4dccb",
+      "zebra": "#faf7f0",
+      "soft_text": "#eef1f7",
+      "focus": "#1b2a4a",
+      "faint": "#6f6a60"
+    },
+    "logo_wordmark": true
+  },
+  "settings": {
+    "currency": "£",
+    "contact_email": "",
+    "invite_code": "CHANGEME",
+    "invite_auto_approve": false,
+    "members_only": false
+  },
+  "auth": { "admin_only": true },
+  "features": {
+    "rsvp": false,
+    "birdie_league": true,
+    "fedex_cup": true,
+    "matchplay": true,
+    "majors": true,
+    "hall_of_fame": true,
+    "awards": true,
+    "subs": true,
+    "birthdays": true,
+    "fantasy": true,
+    "scramble": true,
+    "odds": true,
+    "ryder": true
+  },
+  "rules": {
+    "handicap": {
+      "module": "fixed",
+      "locked": true,
+      "max_index": 54,
+      "default_start_index": 28,
+      "note": "Demo: one handicap per player, played off as-is on every course; only the admin changes it, by their own rules. No WHS, slope or course rating."
+    },
+    "scoring": {
+      "module": "stableford-best-n",
+      "options": {
+        "bestN": 7,
+        "countback": true
+      }
+    },
+    "text": [
+      "Top 7 scores for final total, count back decided on 8th score and so on. (Still level, then most appearances wins)",
+      "Any player scoring 40+ points will be cut a further shot",
+      "All winners will be cut 2 shots (Majors), (1 shot in monthly medal with 9 players or more)",
+      "Anyone failing to comply with any R&A rule will result in a two shot penalty.",
+      "In the event of a tie the result will be decided on a “count back” starting from Stroke Index one on the final day (All competitions)",
+      "At Majors, in the event of no second round, it will become a one round competition.",
+      "Matchplay: any player not turning up twice for their same match will be disqualified. Winner cut 1 shot.",
+      "Euro: winner gets cut 1 shot for the following Euro only."
+    ]
+  },
+  "seed": {
+    "type": "custom",
+    "script": "seed/seed.js"
+  }
+}

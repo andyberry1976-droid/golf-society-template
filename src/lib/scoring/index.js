@@ -33,4 +33,9 @@ function leagueTable(results, cfg = {}) {
   return rows.sort((a, b) => b.total - a.total || b.played - a.played);
 }
 
-module.exports = { ...B, scoreEvent, leagueTable, PRESETS, normalise };
+/** The Demo preset for an event, driven by the season's OoM scheme (as the live site does). */
+function classicConfig(event, scheme) {
+  return { ...PRESETS.demo, format: event.scoring_basis === 'manual' ? 'manual' : event.scoring_basis, allowance: { pct: event.allowance_pct }, points: { mode: scheme.mode, positions: scheme.positions, participation: scheme.participation, bonuses: [] } };
+}
+
+module.exports = { ...B, scoreEvent, leagueTable, classicConfig, PRESETS, normalise };

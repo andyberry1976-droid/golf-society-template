@@ -1,0 +1,38 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'The big list', heading: 'Handicap Records', lead: 'Everyone ranked by current handicap, with their silverware, category and best-ever mark.', doodle: 's-up'}) %>
+<section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap stack">
+  <%- include('partials/season-pick-all', {action: '/handicaps', withAll: false, allSeasons: false, light: true}) %>
+  <% if (past) { %>
+  <div class="panel"><h3><%= season.name %> handicap records</h3><p class="sub">As published at the end of <%= season.name %> (history only: current handicaps are on the <a href="/handicaps">current season</a>).</p>
+    <table class="hr"><thead><tr><th>Rank</th><th>Player</th><th>Achievements</th><th>1 Jan</th><th>End of season</th><th>Playing</th><th>Cat</th><th>Lowest ever</th></tr></thead><tbody>
+    <% past.forEach(function(r){ %><tr>
+      <td class="hr-rk"><span class="rank<%= r.rank<=3 ? ' r'+r.rank : '' %>"><%= r.rank %></span></td>
+      <td class="hr-pl"><% if (r.status==='active') { %><%- include('partials/player', {id: r.id, name: r.name, nick: r.nickname, size: 'sm'}) %><% } else { %><%= r.name %> <span class="mute sm">(former member)</span><% } %></td>
+      <td class="hr-ach" data-l="Achievements"><% if (r.badges && r.badges.length) { %><ul class="bdg sm"><% r.badges.forEach(function(b){ %><li><span aria-hidden="true"><%= b.icon %></span><%= b.label %></li><% }) %></ul><% } else { %><span class="mute">—</span><% } %></td>
+      <td data-l="1 Jan"><%= r.start_index != null ? fmtIdx(r.start_index) : '—' %></td>
+      <td data-l="End of season" class="hr-big"><%= r.end_index != null ? fmtIdx(r.end_index) : '—' %></td>
+      <td data-l="Playing"><%= r.playing %></td><td data-l="Cat"><%= r.category %></td>
+      <td data-l="Lowest ever"><%= r.lowest_index != null ? fmtIdx(r.lowest_index) : '—' %></td></tr><% }) %>
+    </tbody></table></div>
+  <% } else { %>
+  <div class="panel">
+    <table class="hr"><thead><tr><th>Rank</th><th>Player</th><th>Achievements</th><th>1 Jan</th><th>Actual</th><th>Playing</th><th>Cat</th><th>Lowest ever</th><% if (isAdmin) { %><th>Subs (£20)</th><% } %></tr></thead><tbody>
+    <% rows.forEach(function(r){ %><tr>
+      <td class="hr-rk"><span class="rank<%= r.rank<=3 ? ' r'+r.rank : '' %>"><%= r.rank %></span></td>
+      <td class="hr-pl"><%- include('partials/player', {id: r.id, name: r.name, nick: r.nickname, size: 'sm'}) %></td>
+      <td class="hr-ach" data-l="Achievements"><% if (r.badges && r.badges.length) { %><ul class="bdg sm"><% r.badges.forEach(function(b){ %><li><span aria-hidden="true"><%= b.icon %></span><%= b.label %></li><% }) %></ul><% } else { %><span class="mute">—</span><% } %></td>
+      <td data-l="1 Jan"><%= r.jan != null ? fmtIdx(r.jan) : '—' %></td>
+      <td data-l="Actual" class="hr-big"><%= fmtIdx(r.handicap_index) %></td>
+      <td data-l="Playing"><%= r.playing %></td>
+      <td data-l="Cat."><%= r.cat %></td>
+      <td data-l="Lowest ever"><%= isFinite(r.lowest) ? fmtIdx(r.lowest) : '—' %></td>
+      <% if (isAdmin) { %><td data-l="Subs"><span class="badge <%= r.subs_paid ? 'ok' : 'bad' %>"><%= r.subs_paid ? 'Paid' : 'Unpaid' %></span></td><% } %>
+    </tr><% }) %></tbody></table>
+  </div>
+  <% } %>
+  <div class="panel"><h3>Key</h3>
+    <ul class="legend"><li>Playing = handicap rounded. Category: 1 = 0–5, 2 = 6–12, 3 = 13–21, 4 = 22–28. See <a href="/rules">Rules</a>.</li></ul>
+    <% if (isAdmin) { %><p class="hint">Subs column is visible to admins only. Edit in Admin → Members.</p><% } %>
+  </div>
+</div></section>
+<%- include('partials/foot') %>

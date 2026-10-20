@@ -1,0 +1,21 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Two-day specials', heading: 'Majors & the Euro', lead: 'Multi-round stableford events. Totals over all rounds; the winner takes the trophy (and a handicap cut).', doodle: 's-trophy'}) %>
+<section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap stack">
+<%- include('partials/season-pick-all', {action: '/majors', withAll: true, light: true}) %>
+<% if (!tours.length) { %><p class="empty">No majors yet.</p><% } %>
+<% tours.forEach(function(t){ var b = t.board, top = b.rows.filter(function(r){return r.rank===1}); %>
+  <div class="panel" id="t<%= t.id %>"><h3><%= t.name %></h3>
+    <p class="sub"><%= t.kind==='euro' ? 'European Open' : t.kind==='major' ? 'Major' : 'Tournament' %> · <%= b.rounds.map(function(e){return dateShort(e.event_date)}).join(' & ') %>
+      <% if (b.complete && top.length) { %> · 🏆 <b><%= top.map(function(r){return r.name}).join(' & ') %></b> (<%= top[0].total %> pts)<% } %></p>
+    <% if (t.cut_note || t.winner_cut) { %><p class="cutnote">✂️ <%= t.cut_note || ('Winner cut ' + t.winner_cut + ' shots') %><%= t.cut_applies ? '' : ' (not applied to the society index)' %></p><% } %>
+    <% if (b.rows.length) { %>
+    <div class="xs" tabindex="0" role="region" aria-label="<%= t.name %> leaderboard (scrolls sideways)"><table class="gt lb"><thead><tr><th class="rkc">Pos</th><th class="st">Player</th>
+      <% b.rounds.forEach(function(e, i){ %><th><a href="/events/<%= e.id %>">R<%= i+1 %><small><%= dateShort(e.event_date) %></small></a></th><% }) %><th>Total</th></tr></thead><tbody>
+      <% b.rows.forEach(function(r){ %><tr><td class="rkc"><%= r.rank %></td><th scope="row" class="st"><a href="/players/<%= r.user_id %>"><%= r.name %></a></th>
+      <% r.scores.forEach(function(v){ %><td class="<%= v==null ? 'nil' : '' %>"><%= v==null ? '–' : v %></td><% }) %><td class="tot"><%= r.total %></td></tr><% }) %>
+    </tbody></table></div><% } else { %><p class="empty">No scores yet.</p><% } %>
+  </div>
+<% }) %>
+<% if (isAdmin) { %><p><a class="btn btn-yl btn-sm" href="/admin/tournaments">Manage majors</a></p><% } %>
+</div></section>
+<%- include('partials/foot') %>

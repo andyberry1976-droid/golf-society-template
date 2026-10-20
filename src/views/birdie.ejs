@@ -1,0 +1,11 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Side bets', heading: 'Birdie League', lead: 'Every birdie scores 1, every eagle scores 2. Most over the season takes the title.', doodle: 's-spark'}) %>
+<section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap stack">
+  <%- include('partials/season-pick', {action: '/birdie-league'}) %>
+  <div class="panel"><h3>Standings</h3><p class="sub"><%= season ? season.name : '' %><% if (t.holder) { %> · Holder: <a href="/players/<%= t.holder.id %>"><%= t.holder.name %></a><% } %></p>
+    <%- include('partials/comp-table', {rows: t.rows, unit: 'Birdies'}) %></div>
+  <div class="panel"><h3>Event by event</h3><p class="sub">Blank = didn’t play or nothing entered</p>
+    <%- include('partials/score-grid', {events: t.events, rows: t.rows, caption: 'Birdie League by event'}) %></div>
+  <% if (isStaff) { %><p><a class="btn btn-yl btn-sm" href="/admin/comps">Enter birdies &amp; FedEx points</a></p><% } %>
+</div></section>
+<%- include('partials/foot') %>

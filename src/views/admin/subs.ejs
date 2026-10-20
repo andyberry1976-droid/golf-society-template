@@ -1,0 +1,36 @@
+<%- include('_top') %>
+<section class="card">
+  <div class="row-between"><h2>Subs <%= season.name %></h2>
+    <p class="actions"><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/subs.xlsx?season=<%= season.id %>" download>Export to Excel</a><% } %></p></div>
+  <p style="margin-top:8px;font-weight:800"><span class="badge ok"><%= k.paid %> paid</span> <span class="badge bad"><%= k.unpaid %> unpaid</span> <span class="badge"><%= k.total %> members</span><% if (k.collected) { %> <span class="badge">£<%= k.collected.toFixed(2) %> recorded</span><% } %></p>
+  <p class="hint">Only the committee sees this page. Members see just their own status in My account.</p>
+  <form method="get" action="/admin/subs" class="search-row" style="margin-top:14px">
+    <div class="fld"><label for="season">Season</label><select class="in" id="season" name="season"><% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= s.id===season.id ? ' selected' : '' %>><%= s.name %></option><% }) %></select></div>
+    <div class="fld"><label for="show">Show</label><select class="in" id="show" name="show"><% [['all','Everyone'],['unpaid','Unpaid only'],['paid','Paid only']].forEach(function(o){ %><option value="<%= o[0] %>"<%= show===o[0] ? ' selected' : '' %>><%= o[1] %></option><% }) %></select></div>
+    <div class="fld"><label for="q">Name</label><input class="in" id="q" name="q" value="<%= q %>" placeholder="Search"></div>
+    <button class="btn btn-pk" type="submit">Filter</button>
+  </form>
+</section>
+<% if (list && isAdmin) { %><section class="card">
+  <h2>WhatsApp checklist (<%= list.SEASON %>)</h2>
+  <p style="margin-top:6px">Applies the <%= list.LIST.length %> names from the checklist (<%= list.LIST.filter(function(e){ return e.paid }).length %> paid, <%= list.LIST.filter(function(e){ return !e.paid }).length %> not paid). Safe to run again: only rows that differ change, and members not on the list are left alone.</p>
+  <details style="margin-top:8px"><summary style="font-weight:800;cursor:pointer;min-height:44px;display:flex;align-items:center">Name matches (<%= list.LIST.filter(function(e){ return e.check }).length %> to confirm)</summary>
+    <table class="rt" style="margin-top:6px"><thead><tr><th>On the list</th><th>Member</th><th>Paid</th><th>Check</th></tr></thead><tbody>
+    <% list.LIST.forEach(function(e){ %><tr><td class="first" data-l="On the list"><%= e.as %></td><td data-l="Member"><b><%= e.member %></b></td><td data-l="Paid"><span class="badge <%= e.paid ? 'ok' : 'bad' %>"><%= e.paid ? 'Paid' : 'Not paid' %></span></td><td data-l="Check"><%= e.check || '—' %></td></tr><% }) %>
+    </tbody></table></details>
+  <form method="post" action="/admin/subs/apply-list" style="margin-top:12px"><%- include('../partials/csrf') %><button class="btn btn-yl" type="submit">Apply the WhatsApp list</button></form>
+</section><% } %>
+<section class="card">
+  <% if (!rows.length) { %><p class="empty">Nobody matches.</p><% } else { %>
+  <table class="rt"><thead><tr><th>Member</th><th>Status</th><th>Date paid</th><th>Amount (£)</th><th>Note</th><th></th></tr></thead><tbody>
+  <% rows.forEach(function(r){ var fid = 'f' + r.user_id; %><tr id="m<%= r.user_id %>">
+    <td class="first" data-l="Member"><b><%= r.name %></b><% if (r.status !== 'active') { %> <span class="badge">disabled</span><% } %></td>
+    <td data-l="Status"><form method="post" action="/admin/subs/<%= r.user_id %>" class="inline-form"><%- include('../partials/csrf') %><input type="hidden" name="season_id" value="<%= season.id %>"><input type="hidden" name="toggle" value="1"><input type="hidden" name="show" value="<%= show %>"><input type="hidden" name="q" value="<%= q %>">
+      <button type="submit" class="mini-btn" aria-pressed="<%= r.paid ? 'true' : 'false' %>" aria-label="<%= r.name %>: <%= r.paid ? 'paid, mark unpaid' : 'unpaid, mark paid' %>" style="background:<%= r.paid ? '#d9fbe9' : '#ffe3ec' %>"><%= r.paid ? '✓ Paid' : '✗ Unpaid' %></button></form></td>
+    <td data-l="Date paid"><input class="in" form="<%= fid %>" type="date" name="paid_on" value="<%= r.paid_on || '' %>" aria-label="Date paid for <%= r.name %>"></td>
+    <td data-l="Amount (£)"><input class="in" form="<%= fid %>" type="number" step="0.01" min="0" name="amount" value="<%= r.amount != null ? r.amount : '' %>" aria-label="Amount for <%= r.name %>" style="max-width:110px"></td>
+    <td data-l="Note"><input class="in" form="<%= fid %>" name="note" maxlength="200" value="<%= r.note || '' %>" aria-label="Note for <%= r.name %>"></td>
+    <td data-l="Save"><form method="post" action="/admin/subs/<%= r.user_id %>" id="<%= fid %>" class="inline-form"><%- include('../partials/csrf') %><input type="hidden" name="season_id" value="<%= season.id %>"><input type="hidden" name="paid" value="<%= r.paid ? '1' : '0' %>"><input type="hidden" name="show" value="<%= show %>"><input type="hidden" name="q" value="<%= q %>"><button class="mini-btn" type="submit">Save</button></form></td>
+  </tr><% }) %></tbody></table><% } %>
+</section>
+<%- include('_bot') %>

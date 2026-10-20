@@ -1,0 +1,22 @@
+<%- include('_top') %>
+<div class="row-between" style="margin-bottom:12px;flex-wrap:wrap;gap:10px">
+  <form method="get" action="/admin/events" class="sortrow" style="max-width:320px;margin:0"><div style="flex:1"><label for="season" style="font-weight:900;display:block">Season</label>
+    <select class="in" id="season" name="season" data-autosubmit><option value="all"<%= !season ? ' selected' : '' %>>All seasons</option><% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= season && season.id===s.id ? ' selected' : '' %>><%= s.name %></option><% }) %></select></div><noscript><button class="btn btn-yl btn-sm">Go</button></noscript></form>
+  <div class="actions" style="flex-wrap:wrap;gap:8px">
+    <% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/events/export.xlsx<%= season ? '?season=' + season.id : '' %>" download>⬇ Export to Excel<%= season ? ' (' + season.name + ')' : ' (all seasons)' %></a><% } %>
+    <% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/events/export.xlsx?blank=1" download>Download blank template</a><% } %>
+    <% if (season) { %><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/scores.xlsx?season=<%= season.id %>" download>⬇ Players &amp; scores (<%= season.name %>)</a><% } %><% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/scores.xlsx?season=<%= season.id %>&amp;blank=1" download>Scores template (<%= season.name %>)</a><% } %><% } %>
+    <% if (isAdmin) { %><a class="btn btn-wh btn-sm" href="/admin/scores/import">⬆ Import players &amp; scores</a><% } %>
+    <% if (isAdmin) { %><a class="btn btn-yl btn-sm" href="/admin/events/import">⬆ Import from Excel</a><% } %>
+    <a class="btn btn-pk btn-sm" href="/admin/events/new">+ New event</a>
+  </div>
+</div>
+<p class="muted" style="margin-bottom:12px"><%= season ? season.name + ' events' : 'All events' %>, newest first.</p>
+<section class="card" style="padding:8px 10px 12px">
+<table class="rt"><thead><tr><th>Date</th><th>Event</th><th>Season</th><th>Places</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+<% events.forEach(function(e){ %><tr><td class="first" data-l="Date"><%= dateShort(e.event_date) %></td><td data-l="Event"><a class="rowlink" href="/events/<%= e.id %>" style="font-weight:900;text-decoration:underline"><%= e.title %></a></td><td data-l="Season"><%= e.season_name %></td>
+<td data-l="Places"><%= e.capacity != null ? e.going + '/' + e.capacity : e.going %><%= e.waitlist ? ' +' + e.waitlist + ' wait' : '' %></td>
+<td data-l="Status"><span class="badge <%= e.status==='completed' ? 'ok' : (e.status==='cancelled' ? 'bad' : (e.event_date < today ? 'warn' : '')) %>"><%= e.status==='scheduled' && e.event_date < today ? 'needs results' : e.status %></span></td>
+<td class="r"><div class="actions" style="justify-content:flex-end"><a class="btn btn-wh btn-sm" href="/admin/events/<%= e.id %>/edit">Edit</a><a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/edit#players">Players</a><a class="btn btn-yl btn-sm" href="/admin/events/<%= e.id %>/results">Results</a></div></td></tr><% }) %>
+</tbody></table></section>
+<%- include('_bot') %>

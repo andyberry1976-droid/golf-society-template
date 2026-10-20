@@ -1,0 +1,10 @@
+<%# expects: rows (rank,user_id,name,nickname,total,played,holder), unit %>
+<% if (!rows.length) { %><p class="empty" style="margin-top:12px">Nothing entered yet this season.</p><% } else { %>
+<table class="t"><thead><tr><th class="rk">Pos</th><th>Player</th><th><%= unit %></th><th>Events</th><th>Gap</th></tr></thead><tbody>
+<% rows.forEach(function(o, i){ %><tr>
+  <td class="rk"><span class="rank<%= o.rank<=3 ? ' r'+o.rank : '' %>"><%= o.rank %></span></td>
+  <td class="pl-n"><%- include('player', {id: o.user_id, name: o.name, nick: o.nickname, size: 'sm'}) %><% if (o.holder) { %> <span class="hold">Holder</span><% } %></td>
+  <td class="big"><span class="num"><%= o.total %></span></td>
+  <td class="sm2 a" data-l="Events"><%= o.played %></td>
+  <td class="sm2 b" data-l="<%= i ? 'Behind leader' : 'Status' %>"><%- i ? '−' + (rows[0].total - o.total) : '<b>Leader 👑</b>' %></td></tr><% }) %>
+</tbody></table><% } %>

@@ -1,10 +1,40 @@
 {
   "name": "golf-society-template",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "description": "White-label golf society site: events, results, leagues, handicaps and a configurable competition engine.",
   "private": true,
-  "description": "White-label golf society site: any competition format and scoring, configured in the admin, stored in SQLite.",
+  "license": "MIT",
   "main": "src/server.js",
-  "engines": { "node": ">=20" },
-  "scripts": { "start": "node src/server.js", "seed": "node scripts/seed-demo.js", "test": "node --test test/*.test.js" },
-  "dependencies": { "bcryptjs": "^3.0.3", "better-sqlite3": "^11.10.0", "ejs": "^3.1.10", "express": "^4.22.3" }
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node scripts/seed.js",
+    "test": "node --test test/*.test.js",
+    "e2e": "node e2e/e2e.mjs",
+    "mobile": "node e2e/mobile.mjs",
+    "verify-import": "node scripts/verify-import.js",
+    "new-society": "node scripts/setup-society.js",
+    "screenshots": "node e2e/screenshots.mjs",
+    "backup": "node scripts/backup.js",
+    "test:pg": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgres://postgres@127.0.0.1:54329/bogey_test} node --test test/pgstore.test.js",
+    "backup:pg": "bash scripts/pg-backup.sh",
+    "scaffold-site": "node scripts/new-society.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^11.10.0",
+    "ejs": "^3.1.10",
+    "exceljs": "^4.4.0",
+    "express": "^4.22.3",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
 }

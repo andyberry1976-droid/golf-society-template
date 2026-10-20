@@ -2,7 +2,7 @@
 /** Editable starting configs for the "New competition" form. Stored as JSON in competition_types.config. */
 const POS = [30, 24, 20, 17, 14, 12, 10, 8, 6, 5, 4, 3, 2, 1];
 const PRESETS = {
-  classic: { label: 'Classic society OoM (position points + 5 for playing)', format: 'stableford', team: null, allowance: { pct: 95 }, ranking: { tieBreak: 'none' }, points: { mode: 'points', positions: POS, participation: 5, bonuses: [] } },
+  demo: { label: 'Demo (current site rules)', format: 'stableford', team: null, allowance: { pct: 95 }, ranking: { tieBreak: 'none' }, points: { mode: 'points', positions: POS, participation: 5, bonuses: [] } },
   stableford: { label: 'Stableford singles', format: 'stableford', team: null, allowance: { pct: 95 }, ranking: { tieBreak: 'countback' }, points: { mode: 'points', positions: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], participation: 0, bonuses: [] } },
   medal_net: { label: 'Medal (net strokeplay)', format: 'stroke_net', team: null, allowance: { pct: 95, cap: { type: 'net_double_bogey' } }, ranking: { tieBreak: 'countback' }, points: { mode: 'points', positions: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], participation: 0, bonuses: [] } },
   medal_gross: { label: 'Gross strokeplay', format: 'stroke_gross', team: null, allowance: { pct: 0 }, ranking: { tieBreak: 'countback' }, points: { mode: 'points', positions: [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], participation: 0, bonuses: [] } },

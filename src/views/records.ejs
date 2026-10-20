@@ -1,0 +1,9 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Hall of fame (and shame)', heading: 'Society records', lead: 'The numbers everyone quotes at the bar — worked out automatically from the results database.', doodle: 's-star'}) %>
+<section class="sec yl-sec" style="margin-top:-40px;padding-top:70px"><div class="wrap">
+  <%- include('partials/season-pick-all', {action: '/records', withAll: true}) %>
+  <% if (records.length) { %><div class="rec"><% records.forEach(function(r){ %><%- include('partials/reccard', {r: r}) %><% }) %></div>
+  <% } else { %><p class="empty" style="background:#fff">No results entered yet, so no records. Be the first to set one!</p><% } %>
+  <% if (isStaff) { %><p style="margin-top:26px"><a class="btn btn-dk btn-sm" href="/admin/records">Add a fun record (longest drive…)</a></p><% } %>
+</div></section>
+<%- include('partials/foot') %>

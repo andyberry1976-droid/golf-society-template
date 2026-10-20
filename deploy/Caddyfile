@@ -1,0 +1,5 @@
+# /etc/caddy/Caddyfile — automatic HTTPS (Let's Encrypt) in front of the app on :3000
+golf.example.com {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:3000
+}

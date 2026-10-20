@@ -1,0 +1,17 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'The silly season', heading: 'Special awards', lead: 'Our end-of-season trophies. Winners are chosen by secret ballot, bribery and a very loud show of hands.', doodle: 's-spoon'}) %>
+<section class="sec pk-sec" style="margin-top:-40px;padding-top:60px"><div class="wrap">
+  <% if (seasons.length > 1) { %><div class="chips wrap-chips" role="group" aria-label="Choose a season" style="margin-bottom:30px">
+    <% seasons.forEach(function(s){ %><a class="cp" href="/awards?season=<%= s.id %>"<%- sel && sel.id===s.id ? ' aria-current="true"' : '' %>><%= s.name %></a><% }) %></div><% } %>
+  <% if (grants.length) { %><h2 class="h2" style="color:#fff">Special awards<%= sel ? ' ' + sel.name : '' %></h2><div class="aw" style="margin-top:40px"><% grants.forEach(function(a){ %><%- include('partials/awardcard', {a: a}) %><% }) %></div><% } %>
+  <% if (stats && stats.cards.length) { %><h2 class="h2" style="color:#fff;margin-top:44px">By the numbers<%= sel ? ' · ' + sel.name : '' %></h2>
+    <p class="fine" style="color:#fff;opacity:.85;margin-top:6px">Worked out from the scores, so they update as results go in. Averages need <%= stats.min %>+ rounds.</p>
+    <div class="rec" style="margin-top:18px"><% stats.cards.forEach(function(r){ %><%- include('partials/reccard', {r: r}) %><% }) %></div>
+    <% if (stats.skipped.length) { %><p class="fine" style="color:#fff;opacity:.75;margin-top:12px">Not enough data this season for: <%= stats.skipped.map(function(s){ return s.label.toLowerCase() + ' (' + s.why + ')'; }).join('; ') %>.</p><% } %><% } %>
+  <% if (!grants.length && !(stats && stats.cards.length)) { %><p class="empty" style="background:#fff;color:var(--ink)">No awards given yet.</p><% } %>
+  <% if (allTime && allTime.cards.length) { %><h2 class="h2" style="color:#fff;margin-top:44px">All-time</h2>
+    <p class="fine" style="color:#fff;opacity:.85;margin-top:6px">Every recorded season: <%= allTime.seasons.join(', ') %>.</p>
+    <div class="rec" style="margin-top:18px"><% allTime.cards.forEach(function(r){ %><%- include('partials/reccard', {r: r}) %><% }) %></div><% } %>
+  <% if (isStaff) { %><p style="margin-top:30px"><a class="btn btn-yl btn-sm" href="/admin/awards<%= sel ? '?season=' + sel.id : '' %>">Give an award</a></p><% } %>
+</div></section>
+<%- include('partials/foot') %>

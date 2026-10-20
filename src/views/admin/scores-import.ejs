@@ -1,0 +1,40 @@
+<%- include('_top') %>
+<% if (error) { %><p class="flash err" role="alert"><%= error %></p><% } %>
+<% if (!p) { %>
+<section class="card form pad-lg">
+  <h2>Import players &amp; scores from Excel<%= ev ? ': ' + ev.title : '' %></h2>
+  <p style="margin-top:8px;font-weight:700">Upload a scores workbook (an export or a blank template). You’ll see a preview first; nothing is saved until you confirm.</p>
+  <ul class="legend" style="margin-top:10px"><li>One row per player per event. New players are added to the event’s field.</li><li>Blank cells leave what’s in the app; a missing row never removes a player (use Manage players).</li><li>Unknown players are flagged, with suggestions.</li></ul>
+  <form method="post" action="/admin/scores/import" enctype="multipart/form-data" style="margin-top:16px"><%- include('../partials/csrf') %>
+    <label for="file" style="font-weight:900;display:block">Excel file (.xlsx)</label>
+    <input class="in" type="file" id="file" name="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+    <p style="margin-top:14px" class="actions"><button class="btn btn-pk" type="submit">Upload &amp; preview</button>
+      <% if (ev) { %><a class="btn btn-wh" href="/admin/events/<%= ev.id %>/scores.xlsx" download>Export this event</a><a class="btn btn-wh" href="/admin/events/<%= ev.id %>/scores.xlsx?blank=1" download>Blank template (this event)</a><% } %>
+      <% if (typeof cur !== 'undefined' && cur) { %><a class="btn btn-wh" href="/admin/scores.xlsx?season=<%= cur.id %>" download>Export season <%= cur.name %></a><a class="btn btn-wh" href="/admin/scores.xlsx?season=<%= cur.id %>&amp;blank=1" download>Blank template (season <%= cur.name %>)</a><% } %>
+      <a class="btn btn-wh" href="<%= ev ? '/admin/events/' + ev.id + '/results' : '/admin/events' %>">Cancel</a></p>
+  </form>
+</section>
+<% } else { var k = p.counts; %>
+<section class="card">
+  <h2>Preview: <%= file %></h2>
+  <p style="margin-top:8px;font-weight:700"><span class="badge ok"><%= k.new %> new to the field</span> <span class="badge warn"><%= k.changed %> changed</span> <span class="badge"><%= k.unchanged %> unchanged</span> <span class="badge bad"><%= k.error %> with errors</span></p>
+  <p class="hint" style="margin-top:6px"><%= k.error ? 'Rows with errors stop the import: fix them in the sheet and upload again.' : (k.new + k.changed ? 'Nothing has been saved yet. Check the changes, then confirm. Standings are recalculated when you save.' : 'Nothing to change: the sheet matches the app.') %></p>
+</section>
+<form method="post" action="/admin/scores/import/confirm" class="card" style="padding:10px 12px 16px"><%- include('../partials/csrf') %>
+  <input type="hidden" name="token" value="<%= token %>">
+  <table class="rt"><thead><tr><th>Row</th><th>Event</th><th>Player</th><th>Result</th><th>Details</th></tr></thead><tbody>
+  <% p.rows.filter(function(r){ return r.kind !== 'unchanged' }).concat(p.rows.filter(function(r){ return r.kind === 'unchanged' })).forEach(function(r){ %><tr>
+    <td class="first" data-l="Row"><%= r.rowNo %></td>
+    <td data-l="Event"><%= r.event %><% if (r.date) { %><br><span class="muted sm"><%= dateShort(r.date) %></span><% } %></td>
+    <td data-l="Player"><b><%= r.player || '—' %></b></td>
+    <td data-l="Result"><span class="badge <%= r.kind==='new' ? 'ok' : r.kind==='changed' ? 'warn' : r.kind==='error' ? 'bad' : '' %>"><%= r.kind === 'new' ? 'new player' : r.kind %></span></td>
+    <td data-l="Details"><% if (r.kind==='error') { %><ul class="errs"><% r.errors.forEach(function(e){ %><li><%= e %></li><% }) %></ul>
+      <% } else if (r.diffs.length) { %><ul><% r.diffs.forEach(function(d){ %><li><b><%= d.label %>:</b> <del><%= d.from === '' ? '—' : d.from %></del> → <ins><%= d.to %></ins></li><% }) %></ul><% if (r.kind==='new') { %><span class="muted sm">Added to the field</span><% } %>
+      <% } else if (r.kind==='new') { %>Added to the field (no score yet)<% } else { %><span class="muted">No changes</span><% } %></td></tr><% }) %>
+  </tbody></table>
+  <p style="margin-top:16px" class="actions">
+    <% if (!k.error && (k.new + k.changed)) { %><button class="btn btn-pk" type="submit">Confirm &amp; save</button><% } %>
+    <a class="btn btn-wh" href="/admin/scores/import">Upload another file</a><a class="btn btn-wh" href="/admin/events">Cancel</a></p>
+</form>
+<% } %>
+<%- include('_bot') %>

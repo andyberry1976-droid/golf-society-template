@@ -1,6 +1,130 @@
 <%- include('partials/head') %>
-<section class="hero"><h1><%= site.name %></h1><p><%= site.tagline %></p></section>
-<section class="card"><h2>Coming up</h2><% if (!upcoming.length) { %><p>No fixtures yet.</p><% } %><ul><% upcoming.forEach(function (e) { %><li><strong><%= e.event_date %></strong> <%= e.title %> <span class="badge"><%= e.type %></span> <%= e.course || '' %></li><% }) %></ul></section>
-<section class="card"><h2>Results</h2><ul><% done.forEach(function (e) { %><li><a href="/events/<%= e.id %>"><%= e.event_date %> <%= e.title %></a> <span class="badge"><%= e.type %></span></li><% }) %></ul></section>
-<section class="card"><h2>Leagues</h2><ul><% leagues.forEach(function (l) { %><li><a href="/leagues/<%= l.id %>"><%= l.name %></a></li><% }) %></ul></section>
+<section class="hero" id="top">
+  <svg class="doodle d1 bob" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-trophy"/></svg>
+  <svg class="hero-art ha1 bob2" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-flag"/></svg>
+  <svg class="hero-art ha2 spin" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-spark"/></svg>
+  <svg class="hero-art ha3 bob" viewBox="0 0 64 64" aria-hidden="true"><use href="#s-flam"/></svg>
+  <div class="wrap">
+    <div>
+      <% if (S.est_text) { %><span class="sticker"><svg class="ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-star"/></svg> <%= S.est_text %></span><% } %>
+      <%
+        const words = S.hero_title.trim().split(/\s+/); const last = words.pop();
+      %>
+      <h1<%- logoWordmark ? ' class="h1-logo"' : '' %>><% if (logoWordmark) { %><img class="hero-logo" src="<%= logoUrl %>" alt="<%= S.hero_title %>" width="577" height="338"><% } else { %><%= words.join(' ') %> <span class="pink"><%= last %></span><% } %><% if (S.hero_ribbon) { %><br><span class="ribbon"><%= S.hero_ribbon %></span><% } %></h1>
+      <p class="tagl"><%= S.tagline %></p>
+      <div class="cta">
+        <% if (!locked) { %><% if (F.on.events) { %><a class="btn btn-yl" href="/events">See upcoming events</a><% } %><a class="btn btn-wh" href="/players">Meet the players</a>
+        <% } else if (!adminLoginOnly) { %><a class="btn btn-yl" href="/login">Log in</a><% if (F.on.join) { %><a class="btn btn-wh" href="/join">Join us</a><% } %><% } %>
+      </div>
+    </div>
+    <% if (!locked && F.on.events) { %>
+    <aside class="cd" aria-labelledby="cd-h">
+      <p class="lab">Next tee-off</p>
+      <% if (nextEvent) { %>
+        <h2 id="cd-h"><%= nextEvent.title %></h2>
+        <p class="where"><%= dowShort(nextEvent.event_date) %> <%= dayNum(nextEvent.event_date) %> <%= monthShort(nextEvent.event_date) %> · <%= nextEvent.tee_time %><%= nextEvent.course_name ? ' · ' + nextEvent.course_name : '' %></p>
+        <div class="digits" role="timer" aria-label="Countdown to the next event" data-countdown="<%= nextEvent.event_date %>T<%= nextEvent.tee_time %>">
+          <div class="dg"><b data-cd="d">00</b><span>Days</span></div>
+          <div class="dg"><b data-cd="h">00</b><span>Hours</span></div>
+          <div class="dg"><b data-cd="m">00</b><span>Mins</span></div>
+          <div class="dg"><b data-cd="s">00</b><span>Secs</span></div>
+        </div>
+        <a class="btn btn-pk" href="/events/<%= nextEvent.id %>"><%= !F.on.rsvp ? 'See details' : (nextEvent.full ? 'Join the waitlist' : 'I’m in — grab a spot') %></a>
+      <% } else { %>
+        <h2 id="cd-h">Nothing booked yet</h2>
+        <p class="where cd-empty">No upcoming events right now. Check back soon<%= isStaff ? ' — or add one!' : '.' %></p>
+        <% if (isStaff) { %><a class="btn btn-pk" href="/admin/events/new">Create an event</a><% } %>
+      <% } %>
+    </aside>
+    <% } %>
+  </div>
+</section>
+<% if (!locked && bdays && bdays.length) { %><div class="wrap" style="margin-top:18px"><a class="card bday-banner" href="/birthdays" style="display:block;text-decoration:none;color:inherit;font-weight:800">🎂 Happy birthday, <%= bdays.map(function(b){ return b.name; }).join(' and ') %>! <span style="font-weight:600">See the career highlights →</span></a></div>
+<div class="bday-balloons" id="bday-balloons" data-date="<%= bdayDate %>" hidden aria-hidden="true"><% bdays.forEach(function(b){ %><span class="bb bb-named"><span class="bb-b">🎈</span><span class="bb-l">Happy Birthday <%= b.name %>!</span></span><% }) %></div><% } %>
+
+<% if (!locked) { %>
+<% if (latest) { %>
+<div class="wrap latest" id="latest">
+  <div class="lr" role="region" aria-labelledby="lr-h">
+    <div class="top"><h2 id="lr-h">Latest results</h2><p class="sub"><a href="/events/<%= latest.id %>" style="text-decoration:underline"><%= latest.title %></a><%= latest.course_name ? ' · ' + latest.course_name : '' %> · <%= dateLong(latest.event_date) %></p></div>
+    <ol class="pod">
+      <% podium.forEach(function(r){ const g = 'g' + Math.min(r.position,3); %>
+      <li class="pl <%= g %>"><span class="medal" role="img" aria-label="<%= ordinal(r.position) %> place"><%= r.position %></span>
+        <span class="av" style="<%= avatarStyle(r.user_id) %>" aria-hidden="true"><%= initials(r.name) %></span>
+        <span><b><a href="/players/<%= r.user_id %>"><%= r.name %></a></b><small><%= r.idx_at_event != null ? 'HCP ' + r.idx_at_event.toFixed(1) : '' %><%= r.nickname ? ' · “' + r.nickname + '”' : '' %></small></span>
+        <span class="pts"><%= latest.scoring_basis==='stableford' && r.stableford!=null ? r.stableford : (latest.scoring_basis==='stroke_net' && r.net!=null ? r.net : (r.gross!=null ? r.gross : '—')) %><small><%= latest.scoring_basis==='stableford' ? 'points' : (latest.scoring_basis==='stroke_net' ? 'net' : (latest.scoring_basis==='stroke_gross' ? 'gross' : (r.note || 'place'))) %></small></span></li>
+      <% }) %>
+    </ol>
+    <% if (bits.length) { %><ul class="bits"><% bits.forEach(function(b){ %><li class="bit"><%= b %></li><% }) %></ul><% } %>
+    <p style="margin-top:14px"><a class="btn-link" href="/events/<%= latest.id %>">Full results →</a></p>
+  </div>
+</div>
+<% } %>
+
+<% if (F.on.events) { %><section class="sec" id="events" style="padding-top:60px">
+  <div class="wrap">
+    <div class="head"><span class="eyebrow">What’s coming up</span><h2 class="h2">Upcoming <u>events</u></h2><% if (F.on.rsvp) { %><p class="lead">Hit “I’m in” to bag a spot. Full? Join the waitlist and we’ll bump you in automatically if someone drops out.</p><% } %></div>
+    <% if (upcoming.length) { %><div class="cards"><% upcoming.forEach(function(e){ %><%- include('partials/evcard', {e: e, rsvps: rsvps, cur: cur}) %><% }) %></div>
+    <% } else { %><p class="empty">No events on the calendar yet.</p><% } %>
+    <p class="note"><a class="btn-link" href="/events">All events &amp; past results →</a></p>
+  </div>
+</section><% } %>
+
+<section class="sec wavy dark" id="standings">
+  <div class="wrap">
+    <div class="head"><span class="eyebrow" style="background:var(--yl);color:var(--ink)">The big tables</span><h2 class="h2">Handicaps &amp; <u style="background:linear-gradient(transparent 62%,var(--pk) 62% 92%,transparent 92%)">standings</u></h2><p class="lead">Arrows show how many places each player moved after the last event. Lower handicap is better.</p></div>
+    <div class="two">
+      <div class="panel"><h3>Handicap leaderboard</h3><p class="sub"><%= hl.lastEvent ? 'After ' + hl.lastEvent.title : 'Lowest is best' %></p><%- include('partials/hl-table', {rows: hl.rows.slice(0,6), n: 6}) %></div>
+      <% if (F.on.oom) { %><div class="panel"><h3>Order of Merit</h3><p class="sub"><%= season ? season.name + ' season' : '' %></p><%- include('partials/om-table', {rows: om.rows.slice(0,6)}) %></div><% } %>
+    </div>
+    <% if (F.on.oom) { %><p style="margin-top:22px"><a class="btn btn-yl" href="/standings">Full standings</a></p><% } %>
+  </div>
+</section>
+
+<% if (F.on.records) { %><section class="sec wavy yl-sec" id="records">
+  <div class="wrap">
+    <div class="head"><span class="eyebrow">Hall of fame (and shame)</span><h2 class="h2">Society <u style="background:linear-gradient(transparent 62%,#fff 62% 92%,transparent 92%)">records</u></h2><p class="lead">Worked out automatically from every result entered.</p></div>
+    <div class="rec"><% records.forEach(function(r){ %><%- include('partials/reccard', {r: r}) %><% }) %></div>
+    <p style="margin-top:22px"><a class="btn btn-dk" href="/records">All records</a></p>
+  </div>
+</section><% } %>
+
+<% if (F.on.honours) { %><section class="sec wavy hon" id="honours">
+  <div class="wrap">
+    <div class="head"><span class="eyebrow">Who won what</span><h2 class="h2">Roll of <u>honour</u></h2><p class="lead">The most recent titles. See every year on the roll of honour page.</p></div>
+    <div class="hbox"><%- include('partials/hon-table', {rows: honours}) %></div>
+    <p style="margin-top:22px"><a class="btn btn-pk" href="/honours">Full roll of honour</a></p>
+  </div>
+</section><% } %>
+
+<% if (awards.length && F.on.awards) { %>
+<section class="sec wavy pk-sec" id="awards">
+  <div class="wrap">
+    <div class="head"><span class="eyebrow">The silly season</span><h2 class="h2">Special <u style="background:linear-gradient(transparent 62%,var(--em) 62% 92%,transparent 92%)">awards</u></h2></div>
+    <div class="aw" style="margin-top:40px"><% awards.forEach(function(a){ %><%- include('partials/awardcard', {a: a}) %><% }) %></div>
+    <p style="margin-top:30px"><a class="btn btn-yl" href="/awards">All awards</a></p>
+  </div>
+</section>
+<% } %>
+<% } %>
+
+<% if (!user && F.on.join) { %>
+<section class="sec wavy em-sec" id="join">
+  <div class="wrap">
+    <div class="jg">
+      <div>
+        <span class="eyebrow" style="background:var(--yl);color:var(--ink)">Spaces left</span>
+        <h2 class="h2">Join the <u style="background:linear-gradient(transparent 62%,var(--pk) 62% 92%,transparent 92%)">society</u></h2>
+        <p class="lead"><%= S.join_blurb %></p>
+        <ul class="perks">
+          <% if (F.on.rsvp) { %><li><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-check"/></svg>RSVP to events in two taps</li><% } %>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-check"/></svg>Official-style handicaps that update automatically</li>
+          <li><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-check"/></svg>A leaderboard, records and a very shiny trophy cabinet</li>
+        </ul>
+      </div>
+      <div class="jf"><h3>Ready to tee off?</h3><p class="fine">Apply in a minute. An admin approves new members. Got an invite code? Even quicker.</p><a class="btn btn-pk" href="/join">Apply to join</a><p class="fine">Already a member? <a href="/login" style="text-decoration:underline">Log in</a></p></div>
+    </div>
+  </div>
+</section>
+<% } %>
 <%- include('partials/foot') %>

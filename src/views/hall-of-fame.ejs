@@ -1,0 +1,20 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Legends', heading: 'Hall of fame', lead: 'Every title ever won, plus the hole-in-one club. ' + h.totals.titles + ' titles and ' + h.totals.hioc + ' aces on record.', doodle: 's-star'}) %>
+<section class="sec yl-sec" style="margin-top:-40px;padding-top:70px"><div class="wrap stack">
+  <div class="fame-lead">
+  <% Object.keys(keys).forEach(function(sym){ var k = keys[sym], l = h.leaders[k.key]; %>
+    <div class="card fl"><span class="fi" aria-hidden="true"><%= k.icon %></span><h2><%= k.plural %></h2><p><%= l ? l.who.join(' & ') + ' — ' + l.n : 'Nobody yet' %></p></div>
+  <% }) %>
+  </div>
+  <section class="card" aria-labelledby="hioc"><h2 id="hioc">⛳ The hole-in-one club</h2>
+    <ul class="hioc"><% h.hioc.forEach(function(m){ %><li><a href="/players/<%= m.id %>"><%= m.name %></a><% if (m.a.hioc > 1) { %> <b>×<%= m.a.hioc %></b><% } %></li><% }) %></ul>
+  </section>
+  <section class="card" aria-labelledby="tc"><h2 id="tc">Title count</h2>
+    <div class="xs" tabindex="0" role="region" aria-label="Title count (scrolls sideways)"><table class="gt fame"><thead><tr><th class="st">Player</th><th title="Majors">🏆 Majors</th><th title="Order of Merit">💷 OoM</th><th title="European Open">🇪🇺 Euro</th><th title="Matchplay">⚔️ MP</th><th title="FedEx Cup">📦 FedEx</th><th>⛳ HIO</th><th>Titles</th></tr></thead><tbody>
+    <% h.rows.forEach(function(m){ %><tr><th scope="row" class="st"><a href="/players/<%= m.id %>"><%= m.name %></a></th>
+      <% ['major','oom','euro','matchplay','fedex','hioc'].forEach(function(k){ %><td class="<%= m.a[k] ? '' : 'nil' %>"><%= m.a[k] || '·' %></td><% }) %><td class="tot"><%= m.titles %></td></tr><% }) %>
+    </tbody></table></div>
+    <p class="hint" style="margin-top:10px">Achievement codes: HIOC hole-in-one club, * Major, £ Order of Merit, € European Open, M Matchplay, F FedEx Cup.</p>
+  </section>
+</div></section>
+<%- include('partials/foot') %>

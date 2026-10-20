@@ -1,0 +1,24 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Team golf', heading: 'Texas Scramble', lead: 'Four-ball team scrambles. Just for fun: they don’t count towards the Order of Merit or any stats.', doodle: 's-flag'}) %>
+<div class="page-body"><div class="wrap lift stack">
+  <% if (!events.length) { %><section class="card"><p>No scrambles on record yet.</p></section><% } %>
+  <% events.forEach(function(e){ %>
+  <section class="card" aria-labelledby="ts-<%= e.id %>">
+    <h2 id="ts-<%= e.id %>"><%= e.year %> · <%= e.title %></h2>
+    <p style="margin-top:6px;font-weight:700"><%= e.course %> · <%= e.event_date ? dateShort(e.event_date) : 'Date TBC' %><% if (e.format) { %> · <%= e.format %><% } %></p>
+    <div class="xs ts-wide" tabindex="0" role="region" aria-label="<%= e.title %> results"><table class="rt"><thead><tr><th>Pos</th><th>Team</th><th>Players</th><th>Team HCP</th><th>Score</th><th>To par</th></tr></thead><tbody>
+    <% e.results.forEach(function(r){ %><tr>
+      <td><%= r.joint ? 'T' : '' %><%= r.position %><%= r.position === 1 ? ' 🏆' : '' %></td>
+      <td><strong><%= r.team %></strong></td>
+      <td><% r.players.forEach(function(p, i){ %><%= i ? ', ' : '' %><% if (p.user_id) { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %><% if (p.hcp != null) { %> <span class="mute">(<%= p.hcp %>)</span><% } %><% }) %></td>
+      <td><%= r.hcp != null ? r.hcp : '–' %></td><td><%= r.score %></td><td><%= r.to_par > 0 ? '+' + r.to_par : (r.to_par === 0 ? 'E' : '−' + Math.abs(r.to_par)) %></td>
+    </tr><% }) %></tbody></table></div>
+    <ol class="ts-cards" aria-label="<%= e.title %> results">
+    <% e.results.forEach(function(r){ %><li class="ts-card">
+      <p class="ts-h"><span class="ts-pos"><%= r.joint ? 'T' : '' %><%= r.position %></span> <strong><%= r.team %></strong><%= r.position === 1 ? ' 🏆' : '' %></p>
+      <ul class="ts-pl"><% r.players.forEach(function(p){ %><li><% if (p.user_id) { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %><% if (p.hcp != null) { %> <span class="mute">(<%= p.hcp %>)</span><% } %></li><% }) %></ul>
+      <p class="ts-s">Team hcp <%= r.hcp != null ? r.hcp : '–' %> · Net <%= r.score %> · <%= r.to_par > 0 ? '+' + r.to_par : (r.to_par === 0 ? 'E' : '−' + Math.abs(r.to_par)) %></p>
+    </li><% }) %></ol>
+  </section><% }) %>
+</div></div>
+<%- include('partials/foot') %>
