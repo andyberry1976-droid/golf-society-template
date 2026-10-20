@@ -1,0 +1,5 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= typeof title !== 'undefined' ? title + ' · ' : '' %><%= site.name %></title><link rel="stylesheet" href="/public/app.css">
+<style>:root{--primary:<%= site.primary %>;--accent:<%= site.accent %>}</style></head><body>
+<header><a class="brand" href="/"><% if (site.logo_url) { %><img src="<%= site.logo_url %>" alt=""><% } %><%= site.name %></a>
+<nav><a href="/">Home</a><% if (admin) { %><a href="/admin">Admin</a><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button>Log out</button></form><% } else { %><a href="/login">Admin login</a><% } %></nav></header><main>

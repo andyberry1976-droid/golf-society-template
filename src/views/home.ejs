@@ -1,0 +1,6 @@
+<%- include('partials/head') %>
+<section class="hero"><h1><%= site.name %></h1><p><%= site.tagline %></p></section>
+<section class="card"><h2>Coming up</h2><% if (!upcoming.length) { %><p>No fixtures yet.</p><% } %><ul><% upcoming.forEach(function (e) { %><li><strong><%= e.event_date %></strong> <%= e.title %> <span class="badge"><%= e.type %></span> <%= e.course || '' %></li><% }) %></ul></section>
+<section class="card"><h2>Results</h2><ul><% done.forEach(function (e) { %><li><a href="/events/<%= e.id %>"><%= e.event_date %> <%= e.title %></a> <span class="badge"><%= e.type %></span></li><% }) %></ul></section>
+<section class="card"><h2>Leagues</h2><ul><% leagues.forEach(function (l) { %><li><a href="/leagues/<%= l.id %>"><%= l.name %></a></li><% }) %></ul></section>
+<%- include('partials/foot') %>

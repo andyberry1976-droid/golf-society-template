@@ -1,0 +1,6 @@
+<%- include('partials/head', { title: ev.title }) %>
+<section class="card"><h1><%= ev.title %></h1><p><%= ev.event_date %> · <%= ev.type %><%= ev.course ? ' · ' + ev.course : '' %></p>
+<% if (!results.length) { %><p>No results yet.</p><% } else { %><table><thead><tr><th>Pos</th><th>Player</th><th>PH</th><th>Gross</th><th>Net</th><th>Pts (stb)</th><th>Points</th><th></th></tr></thead><tbody>
+<% results.forEach(function (r) { %><tr><td><%= r.position || '–' %></td><td><%= r.name %></td><td><%= r.playing_handicap ?? '' %></td><td><%= r.gross ?? '' %></td><td><%= r.net ?? '' %></td><td><%= r.stableford ?? '' %></td><td><strong><%= r.points %></strong></td><td><%= r.detail || '' %></td></tr><% }) %>
+</tbody></table><% } %></section>
+<%- include('partials/foot') %>

@@ -1,0 +1,11 @@
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,sans-serif;color:#1d2a24;background:#f6f4ee}
+header{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.8rem 1.2rem;background:var(--primary);color:#fff;flex-wrap:wrap}
+header a{color:#fff;text-decoration:none;margin-right:1rem}.brand{font-weight:800;font-size:1.2rem;display:flex;align-items:center;gap:.5rem}.brand img{height:36px}
+nav{display:flex;align-items:center}nav form{display:inline}nav button{background:none;border:1px solid #fff;color:#fff;border-radius:6px;padding:.2rem .6rem;cursor:pointer}
+main{max-width:1100px;margin:0 auto;padding:1rem}.hero{padding:1.5rem 0}.hero h1{margin:0;color:var(--primary)}
+.card{background:#fff;border-radius:12px;padding:1rem 1.2rem;margin:0 0 1rem;box-shadow:0 1px 3px #0001}.narrow{max-width:420px}
+.badge{display:inline-block;background:var(--accent);color:#000;border-radius:999px;padding:0 .5rem;font-size:.8rem}
+.btn,button{display:inline-block;background:var(--primary);color:#fff;border:0;border-radius:8px;padding:.45rem .9rem;margin:.2rem 0;text-decoration:none;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.6rem;align-items:end}label{display:block}input,select{width:100%;padding:.35rem;border:1px solid #ccd;border-radius:6px}
+input[type=checkbox]{width:auto}td input{width:auto}table{border-collapse:collapse;width:100%}th,td{text-align:left;padding:.35rem .5rem;border-bottom:1px solid #eee}
+.scroll{overflow-x:auto}.err{color:#b00020;font-weight:700}.hint{color:#555}footer{text-align:center;color:#777;padding:2rem}

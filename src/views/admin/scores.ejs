@@ -1,0 +1,13 @@
+<%- include('../partials/head', { title: 'Scores' }) %>
+<section class="card"><h1><%= ev.title %></h1><p><%= ev.event_date %> · <%= ev.type %> (<%= cfg.format %><%= cfg.team ? ', ' + cfg.team.type + ' teams of ' + cfg.team.size : '' %>)</p>
+<p class="hint">For each player enter <strong>either</strong> 18 hole scores (comma separated, <code>-</code> for no return) <strong>or</strong> a gross / stableford total. Team or match number groups players for team formats and matchplay. Leave a row blank if they didn't play.</p>
+<% if (error) { %><p class="err"><%= error %></p><% } %>
+<form method="post" action="/admin/events/<%= ev.id %>/scores"><input type="hidden" name="_csrf" value="<%= csrf %>">
+<div class="scroll"><table><thead><tr><th>Player</th><th>Index</th><th>Team / match</th><th>Hole by hole</th><th>Gross</th><th>Stableford</th><th>Birdies</th><th>Position (override)</th></tr></thead><tbody>
+<% members.forEach(function (m) { var s = sc.get(m.id) || {}; %><tr><td><%= m.name %></td>
+<td><input name="hcp_<%= m.id %>" size="4" value="<%= s.hcp_index ?? m.handicap_index %>"></td><td><input name="team_<%= m.id %>" size="3" value="<%= s.team_no ?? '' %>"></td>
+<td><input name="holes_<%= m.id %>" size="40" value="<%= s.holes ? JSON.parse(s.holes).map(function (x) { return x == null ? '-' : x; }).join(',') : '' %>"></td>
+<td><input name="gross_<%= m.id %>" size="4" value="<%= s.gross_total ?? '' %>"></td><td><input name="stableford_<%= m.id %>" size="4" value="<%= s.stableford_total ?? '' %>"></td>
+<td><input name="birdies_<%= m.id %>" size="3" value="<%= s.birdies ?? '' %>"></td><td><input name="position_<%= m.id %>" size="3" value="<%= s.position_in ?? '' %>"></td></tr><% }) %>
+</tbody></table></div><button>Save scores &amp; calculate results</button></form></section>
+<%- include('../partials/foot') %>
