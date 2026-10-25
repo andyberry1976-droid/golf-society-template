@@ -1,4 +1,7 @@
 <%- include('partials/head') %>
+<% if (isAdmin && fa && fa.form && fa.errors && Object.keys(fa.errors).length) { %>
+<div class="flashes"><div class="wrap"><div class="flash err" role="alert" id="fl-not-saved"><strong><%= fa.form === 'team' ? 'Team not saved' : 'Player not added' %>:</strong> <%= Object.values(fa.errors).join(' · ') %>. <a href="#fl-admin">Fix it in the admin form below</a>.</div></div></div>
+<% } %>
 <%- include('partials/pagehero', {eyebrow: 'Coming in 2027', heading: 'Fantasy League', lead: 'You’ve spent years slagging off everyone’s golf. Now put your money where your mouth is.', doodle: 's-flag'}) %>
 <div class="page-body"><div class="wrap lift stack">
   <% if (prices && prices.players.length) { %>
@@ -15,10 +18,23 @@
       <td data-l="Squad"><%= t.picks.map(function(p){ return p.name + (p.name === t.captain ? ' (C)' : ''); }).join(', ') %></td><td class="r" data-l="Cost">£<%= t.cost.toFixed(1) %>m</td></tr><% }) %>
     </tbody></table></div></section>
   <% } %>
-  <% if (isAdmin && fa) { const pl = (prices && prices.players) || []; const er = fa.errors || {}; const vv = fa.values || {}; const pv = fa.form === 'player' ? vv : {}; const tv = fa.form === 'team' ? vv : {}; const tp = tv.picks || []; %>
+  <% if (ml && teams && teams.length) { %>
+  <section class="card" aria-labelledby="fl-grid"><h2 id="fl-grid">League table <%= season %>: points by month</h2>
+    <p style="margin-top:8px;font-weight:700"><% if (ml.scored) { %>Each manager’s fantasy points per month (captain doubled). An event counts in the month it starts.<% } else { %>No events scored yet. Points appear here after each event; – means no event that month yet.<% } %></p>
+    <div class="xs" tabindex="0" role="region" aria-label="Fantasy league table by month"><table class="gt fl-grid"><thead><tr><th class="rkc">Pos</th><th class="st">Manager<small>Team</small></th><% ml.months.forEach(function(m){ %><th><%= m.label %></th><% }) %><th>Total</th></tr></thead><tbody>
+    <% ml.grid.forEach(function(g){ %><tr><td class="rkc"><%= g.tied ? '=' : '' %><%= g.pos %></td><th class="st" scope="row"><%= g.team.manager_name %><small><%= g.team.team_name %></small></th><% g.months.forEach(function(v){ %><td class="<%= v == null ? 'nil' : '' %>"><%= v == null ? '–' : v %></td><% }) %><td class="tot"><%= g.total %></td></tr><% }) %>
+    </tbody></table></div></section>
+  <section class="card" aria-labelledby="fl-sq"><h2 id="fl-sq">Squads month by month</h2>
+    <p style="margin-top:8px;font-weight:700">Squads are fixed for the season (no transfers), so each month shows the same <%= R.squad %> players and captain with what they scored.</p>
+    <% ml.squads.forEach(function(s, k){ %><h3 style="margin-top:14px" id="fl-sq-<%= s.team.id %>"><%= s.team.team_name %> <small style="font-weight:700">· <%= s.team.manager_name %></small></h3>
+    <div class="xs" tabindex="0" role="region" aria-label="<%= s.team.team_name %> squad by month"><table class="gt fl-sq"><thead><tr><th class="st">Player</th><% ml.months.forEach(function(m){ %><th><%= m.label %></th><% }) %><th>Total</th></tr></thead><tbody>
+    <% s.players.forEach(function(p){ %><tr><th class="st" scope="row"><%= p.name %><%= p.captain ? ' (C)' : '' %></th><% p.months.forEach(function(v){ %><td class="<%= v == null ? 'nil' : '' %>"><%= v == null ? '–' : v %></td><% }) %><td class="tot"><%= p.total %></td></tr><% }) %>
+    </tbody></table></div><% }) %></section>
+  <% } %>
+  <% if (isAdmin && fa) { const pl = (prices && prices.players) || []; const er = fa.errors || {}; const vv = fa.values || {}; const pv = fa.form === 'player' ? vv : {}; const tv = fa.form === 'team' ? vv : {}; const tp = tv.slots || tv.picks || []; %>
   <section class="card" id="fl-admin" aria-labelledby="fl-ad"><h2 id="fl-ad">Admin: add players <span class="badge">Admin only</span></h2>
     <p class="hint" style="margin-top:6px">Only admins see this. Season <%= fa.season %> · squad of <%= R.squad %> · £<%= R.budget %>m budget · captain scores double · no free transfer.</p>
-    <form class="form" method="post" action="/fantasy-league/admin/players" novalidate style="margin-top:12px"><%- include('partials/csrf') %>
+    <form class="form" method="post" action="/fantasy-league/admin/players#fl-admin" novalidate style="margin-top:12px"><%- include('partials/csrf') %>
       <h3>Add a golfer to the player pool</h3>
       <div class="cols3">
         <div class="fld"><label for="fa-p-user">Member</label><select class="in" id="fa-p-user" name="user_id"><option value="">— not a member / type a name —</option><% fa.members.forEach(function(m){ %><option value="<%= m.id %>"<%= String(pv.user_id)===String(m.id) ? ' selected' : '' %>><%= m.name %></option><% }) %></select><% if (fa.form==='player' && er.user_id) { %><p class="ferr" role="alert"><%= er.user_id %></p><% } %></div>
@@ -32,7 +48,7 @@
     <ul class="people" style="margin-top:6px"><% added.forEach(function(p){ %><li style="display:flex;gap:8px;align-items:center"><span><%= p.name %> · £<%= p.price.toFixed(1) %>m</span>
       <form method="post" action="/fantasy-league/admin/players/<%= p.id %>/delete" style="display:inline"><%- include('partials/csrf') %><button class="btn btn-wh btn-sm">Remove</button></form></li><% }) %></ul>
     <% } %>
-    <form class="form" method="post" action="/fantasy-league/admin/teams" novalidate style="margin-top:18px"><%- include('partials/csrf') %>
+    <form class="form" method="post" action="/fantasy-league/admin/teams#fl-admin" novalidate style="margin-top:18px"><%- include('partials/csrf') %>
       <h3>Enter a team on someone’s behalf</h3>
       <div class="cols3">
         <div class="fld"><label for="fa-t-user">Member</label><select class="in" id="fa-t-user" name="user_id"><option value="">— not a member / type a name —</option><% fa.members.forEach(function(m){ %><option value="<%= m.id %>"<%= String(tv.user_id)===String(m.id) ? ' selected' : '' %>><%= m.name %></option><% }) %></select><% if (fa.form==='team' && er.user_id) { %><p class="ferr" role="alert"><%= er.user_id %></p><% } %></div>

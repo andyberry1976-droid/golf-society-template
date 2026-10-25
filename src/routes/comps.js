@@ -140,8 +140,9 @@ function fantasyPage(req, res, extra = {}) {
   const added = db.prepare('SELECT COUNT(*) n FROM fantasy_pool WHERE season=?').get(season).n;
   const shown = prices || added ? { season, basedOn: prices && prices.basedOn, players: FA.pool(db, season, prices) } : null;
   const isAdmin = !!(req.user && req.user.role === 'admin');
+  const teams = FA.teams(db, season);
   res.render('fantasy', {
-    title: 'Fantasy League', active: 'fantasy', R, PP, prices: shown, teams: FA.teams(db, season), isAdmin,
+    title: 'Fantasy League', active: 'fantasy', R, PP, prices: shown, teams, isAdmin, season, ml: teams.length ? require('../lib/fantasy').monthly(db, season, teams, R, PP) : null,
     fa: isAdmin ? { season, members: db.prepare("SELECT id, name FROM users WHERE status='active' ORDER BY name").all(), errors: {}, values: {}, form: null, ...extra } : null,
   });
 }

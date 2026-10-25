@@ -54,6 +54,7 @@ function addTeam(db, season, body, base, R, by = null) {
   const errors = {};
   const arr = (v) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map(norm).filter(Boolean);
   const values = { manager_name: norm(body.manager_name), team_name: norm(body.team_name), user_id: String(body.user_id || '').trim(), picks: arr(body.picks), captain: norm(body.captain) };
+  values.slots = (Array.isArray(body.picks) ? body.picks : body.picks == null ? [] : [body.picks]).map(norm);
   let uid = null;
   if (values.user_id) {
     uid = Number(values.user_id); const u = Number.isInteger(uid) && uid > 0 ? db.prepare('SELECT id, name FROM users WHERE id=?').get(uid) : null;
@@ -70,7 +71,8 @@ function addTeam(db, season, body, base, R, by = null) {
   const cost = Math.round(picks.reduce((s, p) => s + p.price, 0) * 10) / 10;
   if (!errors.picks && cost > R.budget) errors.picks = `That squad costs £${cost}m — over the £${R.budget}m budget`;
   const cap = picks.find((p) => key(p.name) === key(values.captain));
-  if (!cap) errors.captain = 'Pick a captain from the squad';
+  if (!values.captain) errors.captain = `Pick a captain: choose one of your ${R.squad} players (they score double)`;
+  else if (!cap) errors.captain = `Pick a captain from the squad: ${values.captain} isn’t one of your ${R.squad} players`;
   if (Object.keys(errors).length) return { ok: false, errors, values };
   const info = db.prepare('INSERT INTO fantasy_teams(season,manager_name,team_name,user_id,picks,captain,created_by) VALUES (?,?,?,?,?,?,?)')
     .run(season, values.manager_name, values.team_name, uid, JSON.stringify(picks), cap.name, by);

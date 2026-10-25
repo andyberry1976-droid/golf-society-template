@@ -646,3 +646,6 @@ table.hr{width:100%;border-collapse:collapse;font-weight:800}
 .fl-prices td:first-child{white-space:normal}
 .fl-prices .r{text-align:right}
 .fl-prices tbody tr:nth-child(even){background:var(--zebra,#f7f3ea)}
+.gt tbody .st small{display:block;font-size:13px;font-weight:700;color:var(--mute)}
+.gt tbody th.st{font-weight:800;color:var(--ink)}
+.fl-grid .tot,.fl-sq .tot{min-width:56px}
