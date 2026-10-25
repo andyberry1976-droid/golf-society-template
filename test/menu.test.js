@@ -6,7 +6,8 @@ const { open, setSetting } = require('../src/db');
 const { seedDemo } = require('../scripts/seed-demo-site');
 const { startApp, Client } = require('./helpers');
 
-const RES = ['/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues', '/honours', '/hall-of-fame', '/records'];
+const RES = ['/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues'];
+const HON = ['/honours', '/hall-of-fame', '/records'];
 const PLY = ['/players', '/handicaps', '/awards', '/prize-money'];
 const hrefs = (html) => [...html.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]);
 
@@ -26,23 +27,35 @@ test('menu: short top level, Players and Results dropdowns + mobile groups + foo
     assert.match(nav, /<button type="button" class="dd-b[^"]*" aria-expanded="false" aria-controls="dd-results"[^>]*>Results/);
     assert.deepEqual(hrefs(dd('dd-players')), PLY); assert.match(dd('dd-players'), /<a href="\/players">All players<\/a><a href="\/handicaps">Handicap Records<\/a><a href="\/awards">Awards<\/a><a href="\/prize-money">Prize Money<\/a>/);
     assert.deepEqual(hrefs(dd('dd-results')), RES);
+    assert.match(nav, /<button type="button" class="dd-b[^"]*" aria-expanded="false" aria-controls="dd-honours"[^>]*>Honours/);
+    assert.ok(nav.indexOf('aria-controls="dd-results"') < nav.indexOf('aria-controls="dd-honours"'), 'Honours right after Results');
+    assert.deepEqual(hrefs(dd('dd-honours')), HON); assert.match(dd('dd-honours'), /<a href="\/honours">Roll of Honour<\/a><a href="\/hall-of-fame">Hall of Fame<\/a><a href="\/records">Records<\/a>/);
     const mob = h.slice(h.indexOf('id="mobile-nav"'), h.indexOf('</nav>', h.indexOf('id="mobile-nav"')));
     const grp = (id) => { const st = mob.indexOf(`id="${id}"`); return mob.slice(st, mob.indexOf('</details>', st)); };
     assert.match(mob, /<details class="msub"><summary aria-controls="m-players" aria-expanded="false">Players<\/summary>/);
     assert.match(mob, /<details class="msub"><summary aria-controls="m-results" aria-expanded="false">Results<\/summary>/);
     assert.ok(mob.indexOf('m-players') < mob.indexOf('m-results'));
     assert.deepEqual(hrefs(grp('m-players')), PLY); assert.deepEqual(hrefs(grp('m-results')), RES);
+    assert.deepEqual(hrefs(grp('m-honours')), HON); assert.ok(mob.indexOf('m-results') < mob.indexOf('m-honours'));
+    assert.match(mob, /<details class="msub"><summary aria-controls="m-honours" aria-expanded="false">Honours<\/summary>/);
     assert.deepEqual(hrefs(mob.slice(0, mob.indexOf('<details'))), ['/', '/events']);
     assert.match(h, /<html lang="en-GB" class="no-js">/, 'no-JS fallback hook');
     const foot = h.slice(h.indexOf('<footer'));
     const col = (name) => { const st = foot.indexOf(`<h2>${name}</h2>`); return foot.slice(st, foot.indexOf('</ul>', st)); };
     const ex = col('Explore'); assert.deepEqual(hrefs(ex).slice(-1), ['/birthdays'], 'Birthdays last in Explore'); assert.ok(!hrefs(ex).includes('/players'));
-    assert.deepEqual(hrefs(col('Players')), PLY, 'footer Players column'); assert.deepEqual(hrefs(col('Results')), RES, 'footer Results column');
+    assert.deepEqual(hrefs(col('Players')), PLY, 'footer Players column'); assert.deepEqual(hrefs(col('Results')), RES, 'footer Results column'); assert.deepEqual(hrefs(col('Honours')), HON, 'footer Honours column');
     // on a Results page that group is open and the page is marked current; Players stays closed
-    let r = (await c.get('/records')).text_;
-    assert.match(r, /<details class="msub" open><summary aria-controls="m-results"/); assert.match(r, /<details class="msub"><summary aria-controls="m-players"/);
-    assert.match(r, /class="dd-b on"[^>]*aria-controls="dd-results"/); assert.doesNotMatch(r, /class="dd-b on"[^>]*aria-controls="dd-players"/);
-    assert.match(r, /<a href="\/records" aria-current="page">/);
+    let r = (await c.get('/standings')).text_;
+    assert.match(r, /<details class="msub" open><summary aria-controls="m-results"/); assert.match(r, /<details class="msub"><summary aria-controls="m-players"/); assert.match(r, /<details class="msub"><summary aria-controls="m-honours"/);
+    assert.match(r, /class="dd-b on"[^>]*aria-controls="dd-results"/); assert.doesNotMatch(r, /class="dd-b on"[^>]*aria-controls="dd-(players|honours)"/);
+    assert.match(r, /<a href="\/standings" aria-current="page">/);
+    // on an Honours page the Honours group is open and highlighted instead; Results stays closed
+    for (const p of HON) {
+      r = (await c.get(p)).text_;
+      assert.match(r, /<details class="msub" open><summary aria-controls="m-honours"/, p); assert.match(r, /<details class="msub"><summary aria-controls="m-results"/, p);
+      assert.match(r, /class="dd-b on"[^>]*aria-controls="dd-honours"/, p); assert.doesNotMatch(r, /class="dd-b on"[^>]*aria-controls="dd-results"/, p);
+      assert.match(r, new RegExp(`<a href="${p}" aria-current="page">`), p);
+    }
     // on a Players page (incl. the moved ones) the Players group is open instead
     for (const p of PLY) {
       r = (await c.get(p)).text_;

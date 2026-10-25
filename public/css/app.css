@@ -324,7 +324,7 @@ table.t{width:100%;border-collapse:collapse;margin-top:10px}
 footer{background:var(--ink);color:#e1d7f3;padding:44px 0 20px}
 .fg{display:grid;gap:28px}
 @media(min-width:760px){.fg{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:1000px){.fg{grid-template-columns:1.3fr 1fr 1fr 1fr}}
+@media(min-width:1000px){.fg{grid-template-columns:1.3fr 1fr 1fr 1fr 1fr}}
 footer .fn{font:400 26px/1.05 var(--f-d);color:#fff}
 footer h2{font:400 18px/1.1 var(--f-d);color:var(--yl)}
 footer ul{margin-top:8px}

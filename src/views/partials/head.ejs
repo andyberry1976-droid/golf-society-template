@@ -8,7 +8,7 @@
 <title><%= title ? title + ' · ' + S.short_name : S.society_name %></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preload" href="/fonts/bagel-fat-one-400.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="/css/app.css?v=12" />
+<link rel="stylesheet" href="/css/app.css?v=13" />
 <% if (themeCss) { %><style><%- themeCss %></style><% } %>
 </head>
 <body>
@@ -21,14 +21,16 @@
       <span<%- logoWordmark ? ' class="sr"' : '' %>><b><%= S.short_name %></b><small>Golf Society</small></span>
     </a>
     <nav class="nav" aria-label="Primary">
-      <% var RES = [['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records']].filter(function(n){ return n === null || F.link(n[0]); });
+      <% var RES = [['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues']].filter(function(n){ return n === null || F.link(n[0]); });
+         var HON = [['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records']].filter(function(n){ return F.link(n[0]); });
          var PLY = [['/players','All players'],['/handicaps','Handicap Records'],['/awards','Awards'],['/prize-money','Prize Money']].filter(function(n){ return F.link(n[0]); });
          var plyActive = ['players','handicaps','awards','prizes'].indexOf(active) >= 0;
-         var resActive = ['standings','comps','honours','fame','records'].indexOf(active) >= 0;
+         var resActive = ['standings','comps'].indexOf(active) >= 0;
+         var honActive = ['honours','fame','records'].indexOf(active) >= 0;
          var curPath = (typeof reqPath !== 'undefined' && reqPath) || '';
          var TOP_A = [['home','Home','/'],['events','Events','/events']].filter(function(n){ return F.link(n[2]); });
          var TOP_B = [['fantasy','Fantasy League','/fantasy-league'],['rules','Rules','/rules'],['birthdays','Birthdays','/birthdays']].filter(function(n){ return F.link(n[2]); });
-         var hasRes = RES.some(function(n){ return n; }); %>
+         var hasRes = RES.length > 0; %>
       <% TOP_A.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
       <% if (PLY.length) { %><div class="dd" data-dd>
         <button type="button" class="dd-b<%= plyActive ? ' on' : '' %>" aria-expanded="false" aria-controls="dd-players" aria-haspopup="true">Players<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -38,7 +40,12 @@
       <% if (hasRes) { %><div class="dd" data-dd>
         <button type="button" class="dd-b<%= resActive ? ' on' : '' %>" aria-expanded="false" aria-controls="dd-results" aria-haspopup="true">Results<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="dd-m" id="dd-results" role="group" aria-label="Results">
-          <% RES.forEach(function(n){ if (!n) { %><span class="dd-sep" aria-hidden="true"></span><% } else { %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% } }) %>
+          <% RES.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %>
+        </div></div><% } %>
+      <% if (HON.length) { %><div class="dd" data-dd>
+        <button type="button" class="dd-b<%= honActive ? ' on' : '' %>" aria-expanded="false" aria-controls="dd-honours" aria-haspopup="true">Honours<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="dd-m" id="dd-honours" role="group" aria-label="Honours">
+          <% HON.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %>
         </div></div><% } %>
       <% TOP_B.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
       <% if (isStaff) { %><a href="/admin"<%- active==='admin' ? ' aria-current="page"' : '' %>>Admin<% if (pendingCount) { %><span class="nbadge" aria-label="<%= pendingCount %> join requests waiting"><%= pendingCount %></span><% } %></a><% } %>
@@ -59,7 +66,9 @@
     <% if (PLY.length) { %><details class="msub"<%= plyActive ? ' open' : '' %>><summary aria-controls="m-players" aria-expanded="<%= plyActive ? 'true' : 'false' %>">Players</summary>
       <div id="m-players"><% PLY.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %></div></details><% } %>
     <% if (hasRes) { %><details class="msub"<%= resActive ? ' open' : '' %>><summary aria-controls="m-results" aria-expanded="<%= resActive ? 'true' : 'false' %>">Results</summary>
-      <div id="m-results"><% RES.forEach(function(n){ if (n) { %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% } }) %></div></details><% } %>
+      <div id="m-results"><% RES.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %></div></details><% } %>
+    <% if (HON.length) { %><details class="msub"<%= honActive ? ' open' : '' %>><summary aria-controls="m-honours" aria-expanded="<%= honActive ? 'true' : 'false' %>">Honours</summary>
+      <div id="m-honours"><% HON.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %></div></details><% } %>
     <% TOP_B.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
     <% if (isStaff) { %><a href="/admin">Admin<% if (pendingCount) { %> (<%= pendingCount %> new)<% } %></a><% } %>
     <% if (adminLoginOnly) { %><% if (user) { %><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form><% } %>
