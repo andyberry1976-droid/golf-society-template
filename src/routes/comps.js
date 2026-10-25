@@ -6,6 +6,20 @@ const comps = require('../lib/comps');
 const Soc = require('../lib/society');
 const { tournamentBoard } = require('../lib/engine');
 const { wrap } = require('../lib/guards');
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+// cache-busting ?v= for a public file: short content hash, so a replaced clip is refetched (static files are cached 7d)
+const verCache = new Map();
+function assetUrl(url) {
+  const file = path.join(__dirname, '..', '..', 'public', url);
+  try {
+    const st = fs.statSync(file); const key = `${file}:${st.size}:${st.mtimeMs}`;
+    if (!verCache.has(key)) verCache.set(key, crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex').slice(0, 10));
+    return `${url}?v=${verCache.get(key)}`;
+  } catch { return url; }
+}
 
 const router = express.Router();
 // matchplay competitions, newest season first
@@ -112,7 +126,7 @@ router.get('/ryder-cup', wrap((req, res) => {
       .map((p) => ({ ...p, points: pts[p.user_id] || 0 }))
       .sort((x, y) => y.points - x.points || x.name.localeCompare(y.name));
     // only local audio files under /audio/ are played
-    const audio = /^\/audio\/[\w.-]+\.(mp3|ogg|m4a)$/.test(c.audio || '') ? c.audio : null;
+    const audio = /^\/audio\/[\w.-]+\.(mp3|ogg|m4a)$/.test(c.audio || '') ? assetUrl(c.audio) : null;
     return { ...c, audio, captainA: c.captain_a_id ? nm(c.captain_a_id)[0] : null, captainB: c.captain_b_id ? nm(c.captain_b_id)[0] : null, sessions, teamA: players.filter((p) => p.team === 'A'), teamB: players.filter((p) => p.team === 'B') };
   });
   res.render('ryder', { title: 'Ryder Cup', active: 'comps', cups, years: all, year: pick ? pick.year : null });
