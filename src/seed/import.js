@@ -3,7 +3,7 @@
  * Generic importer: loads a society's normalised import data (seed/import.json, produced by
  * scripts/new-society.js from CSV/XLSX) into an EMPTY database.
  * Shape: { members:[{name,email?,handicap?,nickname?,role?,joined_on?}], courses:[{name,tee?,par,rating?,slope?,location?}],
- *          events:[{key?,title,date,course?,tee_time?,status?,counts_handicap?,counts_oom?}],
+ *          events:[{key?,title,date,end_date?,course?,tee_time?,status?,counts_handicap?,counts_oom?}],
  *          results:[{event,player,stableford?,gross?,position?}], honours:[{category,year,player?,detail?}] }
  */
 const users = require('../lib/users');
@@ -54,8 +54,9 @@ function applyImport(db, data, { site = null, year = null } = {}) {
   for (const e of D.events) {
     if (!e.title || !e.date) { stats.warnings.push(`event without title/date skipped`); continue; }
     const y = +String(e.date).slice(0, 4);
-    const id = db.prepare(`INSERT INTO events(season_id,title,course_id,event_date,tee_time,status,counts_handicap,counts_oom) VALUES (?,?,?,?,?,?,?,?)`)
-      .run(season(y), e.title, course(e.course), e.date, e.tee_time || '09:00', e.status || 'scheduled', e.counts_handicap === false ? 0 : 1, e.counts_oom === false ? 0 : 1).lastInsertRowid;
+    const end = e.end_date && String(e.end_date) > String(e.date) ? String(e.end_date) : null; // multi-day events
+    const id = db.prepare(`INSERT INTO events(season_id,title,course_id,event_date,end_date,tee_time,status,counts_handicap,counts_oom) VALUES (?,?,?,?,?,?,?,?,?)`)
+      .run(season(y), e.title, course(e.course), e.date, end, e.tee_time || '09:00', e.status || 'scheduled', e.counts_handicap === false ? 0 : 1, e.counts_oom === false ? 0 : 1).lastInsertRowid;
     for (const k of [e.key, e.title, e.date].filter(Boolean)) eid[String(k).trim().toLowerCase()] = eid[String(k).trim().toLowerCase()] || id;
     stats.events++;
   }
