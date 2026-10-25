@@ -8,7 +8,7 @@
 <title><%= title ? title + ' · ' + S.short_name : S.society_name %></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preload" href="/fonts/bagel-fat-one-400.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="/css/app.css?v=11" />
+<link rel="stylesheet" href="/css/app.css?v=12" />
 <% if (themeCss) { %><style><%- themeCss %></style><% } %>
 </head>
 <body>
@@ -21,7 +21,7 @@
       <span<%- logoWordmark ? ' class="sr"' : '' %>><b><%= S.short_name %></b><small>Golf Society</small></span>
     </a>
     <nav class="nav" aria-label="Primary">
-      <% var RES = [['/competitions','All competitions'],['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records']].filter(function(n){ return n === null || F.link(n[0]); });
+      <% var RES = [['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records']].filter(function(n){ return n === null || F.link(n[0]); });
          var PLY = [['/players','All players'],['/handicaps','Handicap Records'],['/awards','Awards'],['/prize-money','Prize Money']].filter(function(n){ return F.link(n[0]); });
          var plyActive = ['players','handicaps','awards','prizes'].indexOf(active) >= 0;
          var resActive = ['standings','comps','honours','fame','records'].indexOf(active) >= 0;

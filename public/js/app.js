@@ -105,6 +105,13 @@
     sel.addEventListener('change', function () { sel.form.submit(); });
   });
 
+  /* Ryder Cup: old /ryder-cup#y2010 links open that year */
+  var rcy = $('#rc-year');
+  if (rcy) {
+    var hm = /^#y(\d{4})$/.exec(location.hash);
+    if (hm && hm[1] !== rcy.getAttribute('data-current') && !/[?&]year=/.test(location.search) && rcy.querySelector('option[value="' + hm[1] + '"]')) location.replace('/ryder-cup?year=' + hm[1] + location.hash);
+  }
+
   /* event form: pick sensible defaults when the format changes */
   var fmt = $('#f-format');
   if (fmt) {

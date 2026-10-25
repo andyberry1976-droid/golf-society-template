@@ -6,7 +6,7 @@ const { open, setSetting } = require('../src/db');
 const { seedDemo } = require('../scripts/seed-demo-site');
 const { startApp, Client } = require('./helpers');
 
-const RES = ['/competitions', '/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues', '/honours', '/hall-of-fame', '/records'];
+const RES = ['/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues', '/honours', '/hall-of-fame', '/records'];
 const PLY = ['/players', '/handicaps', '/awards', '/prize-money'];
 const hrefs = (html) => [...html.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]);
 
@@ -51,6 +51,8 @@ test('menu: short top level, Players and Results dropdowns + mobile groups + foo
     }
     const pid = db.prepare("SELECT id FROM users WHERE status='active' LIMIT 1").get().id;
     assert.match((await c.get(`/players/${pid}`)).text_, /<details class="msub" open><summary aria-controls="m-players"/, 'a player profile opens Players');
+    // 'All competitions' is gone from the menus, but /competitions still works for old links
+    assert.doesNotMatch(h, /All competitions/); assert.equal((await c.get('/competitions')).status, 200);
     // switched-off modules drop out of their submenu
     setSetting(db, 'feature_prizes', '0');
     r = (await c.get('/')).text_; assert.doesNotMatch(r, /href="\/prize-money"/); assert.match(r, /href="\/awards"/);

@@ -91,7 +91,11 @@ router.get('/ryder-cup', wrap((req, res) => {
   const db = req.app.locals.db;
   const names = new Map(db.prepare('SELECT id,name,status FROM users').all().map((u) => [u.id, u]));
   const nm = (ids) => String(ids).split(',').filter(Boolean).map((i) => (names.get(+i) || { name: '?' }).name);
-  const cups = db.prepare('SELECT * FROM ryder_cups ORDER BY year DESC').all().map((c) => {
+  // ?year=YYYY picks one cup (default: the latest); every year on record goes in the dropdown
+  const all = db.prepare('SELECT id,year,team_a,team_b,score_a,score_b FROM ryder_cups ORDER BY year DESC').all();
+  const want = parseInt(req.query.year, 10);
+  const pick = all.find((c) => c.year === want) || all[0];
+  const cups = (pick ? db.prepare('SELECT * FROM ryder_cups WHERE id=?').all(pick.id) : []).map((c) => {
     const ms = db.prepare('SELECT * FROM ryder_matches WHERE cup_id=? ORDER BY session_no, match_no').all(c.id);
     const pa = (w) => (w === 'A' ? 1 : w === 'H' ? 0.5 : 0);
     const pts = {}; const sessions = []; let ra = 0; let rb = 0;
@@ -101,7 +105,7 @@ router.get('/ryder-cup', wrap((req, res) => {
       const p = pa(m.winner); s.a += p; s.b += 1 - p;
       for (const i of m.a_ids.split(',')) pts[i] = (pts[i] || 0) + p;
       for (const i of m.b_ids.split(',')) pts[i] = (pts[i] || 0) + 1 - p;
-      s.matches.push({ ...m, a: nm(m.a_ids), b: nm(m.b_ids) });
+      s.matches.push({ ...m, a: nm(m.a_ids), b: nm(m.b_ids), pa: p, pb: 1 - p });
     }
     for (const s of sessions) { ra += s.a; rb += s.b; s.ra = ra; s.rb = rb; }
     const players = db.prepare('SELECT p.*, u.name, u.status FROM ryder_players p JOIN users u ON u.id=p.user_id WHERE p.cup_id=?').all(c.id)
@@ -109,7 +113,7 @@ router.get('/ryder-cup', wrap((req, res) => {
       .sort((x, y) => y.points - x.points || x.name.localeCompare(y.name));
     return { ...c, captainA: nm(c.captain_a_id)[0], captainB: nm(c.captain_b_id)[0], sessions, teamA: players.filter((p) => p.team === 'A'), teamB: players.filter((p) => p.team === 'B') };
   });
-  res.render('ryder', { title: 'Ryder Cup', active: 'comps', cups });
+  res.render('ryder', { title: 'Ryder Cup', active: 'comps', cups, years: all, year: pick ? pick.year : null });
 }));
 
 router.get('/texas-scramble', (req, res) => res.render('scramble', { title: 'Texas Scramble', active: 'comps', events: require('../lib/scramble').list(req.app.locals.db) }));
