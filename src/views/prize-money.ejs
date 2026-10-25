@@ -23,7 +23,7 @@
     <div class="pz-events">
     <% P.events.forEach(function(e, i){ %>
     <details class="pz-ev" id="pz-e<%= e.id %>"<%= i === P.events.length - 1 ? ' open' : '' %>>
-      <summary><span class="pz-et"><strong><%= e.title %></strong><small><%= dateRange(e.event_date, e.end_date) %></small></span><span class="pz-etot"><%= money(e.total) %></span></summary>
+      <summary><span class="pz-et"><strong><a href="/events/<%= e.id %>#prize-money" class="pz-evlink"><%= e.title %></a></strong><small><%= dateRange(e.event_date, e.end_date) %></small></span><span class="pz-etot"><%= money(e.total) %></span></summary>
       <div class="xs" tabindex="0" role="region" aria-label="<%= e.title %> prizes"><table class="gt pz-lines"><thead><tr><th class="st">Prize</th><th class="l">Winner</th><th>Amount</th></tr></thead><tbody>
       <% e.lines.forEach(function(l){ %><tr class="pz-<%= l.kind %>"><th class="st" scope="row"><%= l.title %></th><td class="l"><% if (l.user_id) { %><a href="/players/<%= l.user_id %>"><%= l.name %></a><% } else { %><%= l.name %><% } %></td><td><%= money(l.amount_pence) %></td></tr><% }) %>
       </tbody><tfoot><tr><th class="st" scope="row">Event total</th><td></td><td class="tot"><%= money(e.total) %></td></tr></tfoot></table></div>

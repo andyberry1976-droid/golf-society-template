@@ -37,6 +37,9 @@ function open(dbPath, { site = null } = {}) {
   require('./lib/site-setup').apply(db, site);
   const ins = db.prepare('INSERT OR IGNORE INTO settings(key,value) VALUES (?,?)');
   for (const [k, v] of Object.entries({ ...DEFAULT_SETTINGS, ...require('./lib/features').defaults(site) })) ins.run(k, v);
+  // a footer still showing the setup placeholder takes the site's real footer text (only if the site config has one)
+  if (DEFAULT_SETTINGS.footer_blurb && !require('./site').isPlaceholderBlurb(DEFAULT_SETTINGS.footer_blurb))
+    db.prepare("UPDATE settings SET value=? WHERE key='footer_blurb' AND value LIKE '%Rebrand me in Admin%'").run(DEFAULT_SETTINGS.footer_blurb);
   return db;
 }
 

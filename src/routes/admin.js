@@ -17,6 +17,7 @@ const stats = require('../lib/stats');
 const standings = require('../lib/standings');
 
 const router = express.Router();
+const prizeSection = (req, id) => require('./prizes').section(req, id); // Prize money section on the event pages (admins only)
 router.use(staff); // everything under /admin needs captain or admin; admin-only routes add adminOnly below
 router.use(/^\/(?:events|tournaments|matchplay)(?:\/|$)/, (req, res, next) => { if (req.method === 'POST') require('../lib/newseason').resolve(req.app.locals.db, req.body, req.user && req.user.id); next(); });
 // every Excel export, template and import is admin-only (captains and members get 403)
@@ -319,7 +320,7 @@ router.get('/events/:id(\\d+)/edit', wrap((req, res) => {
   const db = req.app.locals.db;
   const ev = db.prepare('SELECT * FROM events WHERE id=?').get(Number(req.params.id));
   if (!ev) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such event.' });
-  render(res, 'event-form', { ...eventFormData(db, { ...ev, end_date: ev.end_date || ev.event_date, cost: ev.cost_pence ? (ev.cost_pence / 100).toFixed(2).replace(/\.00$/, '') : '', capacity: ev.capacity ?? '', honour_category_id: ev.honour_category_id || '' }, {}, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id) });
+  render(res, 'event-form', { ...eventFormData(db, { ...ev, end_date: ev.end_date || ev.event_date, cost: ev.cost_pence ? (ev.cost_pence / 100).toFixed(2).replace(/\.00$/, '') : '', capacity: ev.capacity ?? '', honour_category_id: ev.honour_category_id || '' }, {}, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id), pz: prizeSection(req, ev.id) });
 }));
 
 // ---- Event field: add / remove players (same staff permission as editing the event) ----------
@@ -415,7 +416,7 @@ router.post('/events/:id(\\d+)', wrap((req, res) => {
   if (!ev) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such event.' });
   const { f, v } = parseEventForm(req);
   if (f.ok && v.status === 'completed' && !db.prepare('SELECT 1 FROM results WHERE event_id=?').get(id)) f.fail('status', 'Enter results first — an event becomes completed when results are saved.');
-  if (!f.ok) return render(res.status(422), 'event-form', { ...eventFormData(db, f.values, f.errors, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id) });
+  if (!f.ok) return render(res.status(422), 'event-form', { ...eventFormData(db, f.values, f.errors, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id), pz: prizeSection(req, ev.id) });
   db.transaction(() => {
     db.prepare(`UPDATE events SET season_id=?,title=?,course_id=?,event_date=?,end_date=?,tee_time=?,format=?,scoring_basis=?,cost_pence=?,notes=?,status=?,counts_handicap=?,counts_oom=?,points_multiplier=?,allowance_pct=?,honour_category_id=?,counts_birdie=?,counts_fedex=? WHERE id=?`)
       .run(v.season_id, v.title, v.course_id, v.event_date, v.end_date || null, v.tee_time, v.format, v.scoring_basis, Math.round((v.cost || 0) * 100), v.notes || null, v.status, v.counts_handicap, v.counts_oom, v.points_multiplier, v.allowance_pct, v.honour_category_id, v.counts_birdie, v.counts_fedex, id);
@@ -447,7 +448,7 @@ function resultsPage(req, res, extra = {}) {
   const fieldIds = new Set(require('../lib/field').list(db, e.id).map((p) => p.id));
   for (const m of members) m.inField = fieldIds.has(m.id);
   members.sort((a, b) => (b.res ? 1 : 0) - (a.res ? 1 : 0) || (b.inField - a.inField) || (b.rsvp === 'going') - (a.rsvp === 'going') || a.name.localeCompare(b.name));
-  render(res, 'results', { title: 'Results · ' + e.title, adminTab: 'events', e, members, formError: null, submitted: null, ...extra });
+  render(res, 'results', { title: 'Results · ' + e.title, adminTab: 'events', e, members, formError: null, submitted: null, pz: prizeSection(req, e.id), ...extra });
 }
 router.get('/events/:id(\\d+)/results', wrap((req, res) => resultsPage(req, res)));
 router.post('/events/:id(\\d+)/results', wrap((req, res) => {

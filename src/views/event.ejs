@@ -36,6 +36,16 @@
     <section class="card"><h2>Results pending</h2><p style="margin-top:8px;font-weight:700">This event has been played but the results haven’t been entered yet.</p><% if (isStaff) { %><p style="margin-top:12px"><a class="btn btn-pk" href="/admin/events/<%= e.id %>/results">Enter results</a></p><% } %></section>
     <% } %>
 
+    <% if (prizes) { %>
+    <section class="card" id="prize-money" aria-labelledby="pz-h">
+      <div class="row-between"><h2 id="pz-h">Prize money: <%= prizes.money(prizes.total) %></h2><% if (isAdmin) { %><a class="btn btn-yl btn-sm" href="/admin/events/<%= e.id %>/edit#prize-money">Edit prizes</a><% } %></div>
+      <div class="xs" style="margin-top:10px"><table class="gt pz-lines"><thead><tr><th class="st l" scope="col">Prize</th><th class="l" scope="col">Winner</th><th scope="col">Amount</th></tr></thead><tbody>
+      <% prizes.lines.forEach(function(l){ %><tr><th class="st l" scope="row"><%= l.title %></th><td class="l"><% if (l.user_id) { %><a href="/players/<%= l.user_id %>"><%= l.name %></a><% } else { %><%= l.name %><% } %></td><td><%= prizes.money(l.amount_pence) %></td></tr><% }) %>
+      </tbody><tfoot><tr><th class="st l" scope="row">Event total</th><td></td><td class="tot"><%= prizes.money(prizes.total) %></td></tr></tfoot></table></div>
+      <p class="hint" style="margin-top:10px"><a href="/prize-money?year=<%= prizes.year %>" style="text-decoration:underline">All <%= prizes.year %> prize money →</a></p>
+    </section>
+    <% } %>
+
     <section class="card" aria-labelledby="det-h">
       <div class="row-between"><h2 id="det-h">The details</h2><% if (isStaff) { %><a class="btn btn-wh btn-sm" href="/admin/events/<%= e.id %>/edit">Edit event</a><% } %></div>
       <dl class="kv" style="margin-top:14px">

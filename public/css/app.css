@@ -670,3 +670,7 @@ table.hr{width:100%;border-collapse:collapse;font-weight:800}
 .pz-kind{flex-basis:100%;font:400 20px/1.1 var(--f-d)}
 .pz-chk{display:flex;gap:8px;align-items:center;min-height:44px;margin-top:22px}
 .pz-chk input{width:22px;height:22px}
+.pz-add{margin-top:18px;padding-top:14px;border-top:3px dashed var(--line)}
+.pz-add h3{font:400 22px/1.1 var(--f-d);margin-bottom:8px}
+.pz-add .fld{margin-bottom:8px}
+.pz-evlink{text-decoration:underline;text-underline-offset:3px}

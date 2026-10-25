@@ -55,6 +55,9 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     assert.equal((await anon.get('/admin/prizes')).status, 302);
     assert.equal((await mem.get('/admin/prizes')).status, 403); assert.equal((await cap.get('/admin/prizes')).status, 403);
     assert.equal((await cap.get(`/admin/prizes/events/${e1}`)).status, 403);
+    // captains can edit events and enter results, but the prize section is admins only
+    r = await cap.get(`/admin/events/${e1}/edit`); assert.equal(r.status, 200); assert.doesNotMatch(r.text_, /id="prize-money"/);
+    r = await cap.get(`/admin/events/${e1}/results`); assert.equal(r.status, 200); assert.doesNotMatch(r.text_, /id="prize-money"/);
     assert.equal((await mem.post(`/admin/prizes/events/${e1}/lines`, { kind: 'ntp', amount: '10', user_id: String(ids.mem) })).status, 403);
     assert.equal((await cap.post(`/admin/prizes/events/${e1}/lines`, { kind: 'ntp', amount: '10', user_id: String(ids.cap) })).status, 403);
     // CSRF required
@@ -62,18 +65,33 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     assert.equal(db.prepare('SELECT COUNT(*) n FROM prize_lines').get().n, 0);
     // admin pages; winner suggested from results (1st = Alf)
     r = await adm.get('/admin/prizes'); assert.equal(r.status, 200); assert.match(r.text_, /Spring Swing/); assert.match(r.text_, /Algarve Tour/); assert.doesNotMatch(r.text_, /Opener 2028/);
-    r = await adm.get(`/admin/prizes/events/${e1}`); assert.equal(r.status, 200); assert.match(r.text_, /From the results: 1st Player 64 · 2nd Player 65/);
+    assert.match(r.text_, new RegExp(`href="/admin/events/${e1}/edit#prize-money"`), 'overview links to the event');
+    r = await adm.get(`/admin/prizes/events/${e1}`); assert.equal(r.status, 302); assert.equal(r.headers.get('location'), `/admin/events/${e1}/edit#prize-money`);
+    // the Prize money section sits on the event's edit page and on its results-entry page
+    r = await adm.get(`/admin/events/${e1}/results`); assert.equal(r.status, 200); assert.match(r.text_, /<section class="card form pad-lg pz-admin" id="prize-money"/); assert.match(r.text_, /name="back" value="results"/);
+    r = await adm.get(`/admin/events/${old}/edit`); assert.match(r.text_, /Prize money starts with the 2027 season/); assert.doesNotMatch(r.text_, /id="pz-add-place"/);
+    r = await adm.get(`/admin/events/${e1}/edit`); assert.equal(r.status, 200); assert.match(r.text_, /id="prize-money"/); assert.match(r.text_, /name="back" value="edit"/);
+    assert.match(r.text_, /From the results: 1st Player 64 · 2nd Player 65/);
     assert.match(r.text_, new RegExp(`id="pz-ap-u0" name="w_user">.*?<option value="${ids.a}" selected>`, 's'));
-    // validation
-    for (const amount of ['0', '-3', '12.345', 'lots', '']) { r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'place', position: '1', amount, w_user: String(ids.a) }); assert.equal(r.status, 422, amount); assert.match(r.text_, /positive number with up to 2 decimal places/); }
-    r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'place', position: '0', amount: '5', w_user: String(ids.a) }); assert.equal(r.status, 422); assert.match(r.text_, /Position must be a whole number/);
-    r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'place', position: '1', amount: '5' }); assert.equal(r.status, 422); assert.match(r.text_, /Pick a member or type the winner/);
-    r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'other', amount: '5', winner_name: 'Someone' }); assert.equal(r.status, 422); assert.match(r.text_, /Say what the prize is for/);
-    r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'bogus', amount: '5', winner_name: 'Someone' }); assert.equal(r.status, 422);
-    r = await adm.post(`/admin/prizes/events/${e1}/lines`, { kind: 'ntp', amount: '5', user_id: '999999' }); assert.equal(r.status, 422);
+    // validation: a bad form goes back to the event page with the error and the input kept
+    const L = `/admin/prizes/events/${e1}/lines`;
+    const bad = async (path, form, re, back = 'edit') => {
+      const r = await adm.post(path, { back, ...form }); assert.equal(r.status, 302, JSON.stringify(form));
+      const loc = r.headers.get('location'); assert.match(loc, new RegExp(`^/admin/events/\\d+/${back}#`));
+      const p = await adm.get(loc.split('#')[0]); assert.equal(p.status, 200); if (re) assert.match(p.text_, re); return p;
+    };
+    for (const amount of ['0', '-3', '12.345', 'lots', '']) await bad(L, { kind: 'place', position: '1', amount, w_user: String(ids.a) }, /<p class="ferr" role="alert"><strong>Not saved:<\/strong>[^<]*positive number with up to 2 decimal places/);
+    let pg = await bad(L, { kind: 'place', position: '0', amount: '5', w_user: String(ids.a) }, /Position must be a whole number/, 'results');
+    assert.match(pg.text_, /id="pz-ap-pos" name="position"[^>]*value="0"/, 'input kept');
+    pg = await adm.get(`/admin/events/${e1}/results`); assert.doesNotMatch(pg.text_, /Not saved:/, 'error shown once');
+    await bad(L, { kind: 'place', position: '1', amount: '5' }, /Pick a member or type the winner/);
+    await bad(L, { kind: 'other', amount: '5', winner_name: 'Someone' }, /Say what the prize is for/);
+    await bad(L, { kind: 'bogus', amount: '5', winner_name: 'Someone' }, /Unknown prize type/);
+    await bad(L, { kind: 'ntp', amount: '5', user_id: '999999' });
     assert.equal(db.prepare('SELECT COUNT(*) n FROM prize_lines').get().n, 0, 'nothing saved by bad forms');
     // seasons before the start season are refused
-    r = await adm.post(`/admin/prizes/events/${old}/lines`, { kind: 'ntp', amount: '5', winner_name: 'Player 95' }); assert.equal(r.status, 422); assert.match(r.text_, /starts with the 2027 season/);
+    await bad(`/admin/prizes/events/${old}/lines`, { kind: 'ntp', amount: '5', winner_name: 'Player 95' }, /starts with the 2027 season/);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM prize_lines').get().n, 0);
     // e1: 1st £40 Alf, tied 2nd £30 split Bob + typed guest, NTP 7th £10 Alf, NTP (no hole) £5 Bob, longest drive £7.50 guest
     const add = (ev, form) => adm.post(`/admin/prizes/events/${ev}/lines`, form);
     assert.equal((await add(e1, { kind: 'place', position: '1', amount: '40', w_user: String(ids.a), w_name: '', split: '1' })).status, 302);
@@ -82,7 +100,8 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     assert.deepEqual(db.prepare("SELECT amount_pence a, winner_name w FROM prize_lines WHERE event_id=? AND position=2 ORDER BY id").all(e1), [{ a: 1501, w: 'Player 65' }, { a: 1500, w: 'Player 63' }]);
     assert.equal((await add(e1, { kind: 'ntp', label: '7th', amount: '10', user_id: String(ids.a) })).status, 302);
     assert.equal((await add(e1, { kind: 'ntp', amount: '5', user_id: String(ids.b) })).status, 302);
-    assert.equal((await add(e1, { kind: 'other', label: 'Longest drive', amount: '7.50', winner_name: 'player 63' })).status, 302);
+    r = await add(e1, { kind: 'other', label: 'Longest drive', amount: '7.50', winner_name: 'player 63', back: 'results' }); assert.equal(r.status, 302);
+    assert.equal(r.headers.get('location'), `/admin/events/${e1}/results#prize-money`, 'saved from the results page: back to it');
     // e2: tie for 1st without split = each gets the full amount; NTP Alf
     const tie2 = new URLSearchParams({ _csrf: await adm.csrf(), kind: 'place', position: '1', amount: '20' }); for (const u of [String(ids.a), String(ids.b)]) tie2.append('w_user', u); tie2.append('w_name', ''); tie2.append('w_name', '');
     assert.equal((await adm.req('POST', `/admin/prizes/events/${e2}/lines`, { form: tie2 })).status, 302);
@@ -98,7 +117,7 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     // public page: per-event breakdown, leaderboard, grand total; mobile sticky name column
     r = await anon.get('/prize-money?year=2027'); assert.equal(r.status, 200);
     assert.match(r.text_, /Total paid out in 2027/); assert.match(r.text_, /<p class="pz-big">£132.51<\/p>/);
-    assert.match(r.text_, /<details class="pz-ev" id="pz-e\d+"[^>]*>\s*<summary><span class="pz-et"><strong>Spring Swing<\/strong>/); assert.match(r.text_, /11–13 Jun 2027/);
+    assert.match(r.text_, /<details class="pz-ev" id="pz-e\d+"[^>]*>\s*<summary><span class="pz-et"><strong><a href="\/events\/\d+#prize-money" class="pz-evlink">Spring Swing<\/a><\/strong>/); assert.match(r.text_, /11–13 Jun 2027/);
     assert.match(r.text_, /=2nd<\/th><td class="l"><a href="\/players\/\d+">Player 65<\/a><\/td><td>£15.01<\/td>/);
     assert.match(r.text_, /Event total<\/th><td><\/td><td class="tot">£92.51<\/td>/);
     assert.match(r.text_, /<th class="st" scope="row"><a href="\/players\/\d+">Player 64<\/a><\/th><td>3<\/td><td class="tot">£70<\/td>/);
@@ -109,7 +128,7 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     assert.match(r.text_, /<option value="2027"/);
     // edit and delete
     const ntp = db.prepare("SELECT id FROM prize_lines WHERE label='7th'").get().id;
-    r = await adm.post(`/admin/prizes/lines/${ntp}`, { label: '17th', amount: '12.345', user_id: String(ids.a) }); assert.equal(r.status, 422); assert.match(r.text_, /positive number/);
+    await bad(`/admin/prizes/lines/${ntp}`, { label: '17th', amount: '12.345', user_id: String(ids.a) }, new RegExp(`id="pz-amt-${ntp}" name="amount" inputmode="decimal" value="12.345"`));
     r = await adm.post(`/admin/prizes/lines/${ntp}`, { label: '17th', amount: '12', user_id: '', winner_name: 'Player 63' }); assert.equal(r.status, 302);
     assert.deepEqual(db.prepare('SELECT label, amount_pence, user_id, winner_name FROM prize_lines WHERE id=?').get(ntp), { label: '17th', amount_pence: 1200, user_id: null, winner_name: 'Player 63' });
     assert.equal((await cap.post(`/admin/prizes/lines/${ntp}/delete`)).status, 403);
@@ -120,6 +139,13 @@ test('prize money: admin-only entry, validation, ties and splits, totals, leader
     assert.deepEqual(acts, { prize_add: 9, prize_edit: 1, prize_delete: 1 });
     assert.match(db.prepare("SELECT detail FROM audit_log WHERE action='prize_edit'").get().detail, /was nearest the pin 7th: £10 to Player 64; now nearest the pin 17th: £12 to Player 63/);
     // start season setting
+    // public event page shows that event's prizes and total; the Prize Money page links each event to it
+    r = await anon.get(`/events/${e1}`); assert.match(r.text_, /<h2 id="pz-h">Prize money: £82.51<\/h2>/); assert.match(r.text_, /=2nd<\/th><td class="l">Player 63<\/td><td>£15<\/td>/);
+    assert.doesNotMatch(r.text_, /Edit prizes/);
+    assert.match((await adm.get(`/events/${e1}`)).text_, new RegExp(`href="/admin/events/${e1}/edit#prize-money">Edit prizes`));
+    assert.doesNotMatch((await anon.get(`/events/${old}`)).text_, /id="prize-money"/, 'nothing before 2027');
+    r = await anon.get('/prize-money?year=2027'); assert.match(r.text_, new RegExp(`<a href="/events/${e1}#prize-money" class="pz-evlink">Spring Swing</a>`)); assert.match(r.text_, new RegExp(`<a href="/events/${e2}#prize-money" class="pz-evlink">Algarve Tour</a>`));
+    assert.match(r.text_, /<p class="pz-big">£122.51<\/p>/);
     assert.equal((await adm.post('/admin/prizes/settings', { prize_start_season: 'soon' })).status, 302); assert.equal(getSettings(db).prize_start_season, '2027');
     assert.equal((await adm.post('/admin/prizes/settings', { prize_start_season: '2028' })).status, 302); assert.equal(getSettings(db).prize_start_season, '2028');
     r = await anon.get('/prize-money'); assert.doesNotMatch(r.text_, /<option value="2027"/);

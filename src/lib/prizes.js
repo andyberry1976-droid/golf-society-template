@@ -191,4 +191,33 @@ function suggestions(db, eventId) {
   return { rows, byPos };
 }
 
-module.exports = { KINDS, startSeason, parseAmount, fmtMoney, years, pickYear, validateLine, addLine, editLine, deleteLine, getLine, eventLines, seasonEvents, season, suggestions, split, yearOfEvent, thisYear };
+/**
+ * Data for the "Prize money" section on an event's admin pages (edit + results entry). `stash` = a failed form
+ * kept in the session ({eventId, errors, values, form, editId}) so the admin sees their input and the error.
+ */
+function adminSection(db, S, eventId, stash = null) {
+  const info = yearOfEvent(db, eventId);
+  if (!info) return null;
+  const start = startSeason(S);
+  const lines = eventLines(db, eventId);
+  const places = lines.filter((l) => l.kind === 'place').map((l) => l.position);
+  const st = stash && Number(stash.eventId) === Number(eventId) ? stash : {};
+  return {
+    ev: info, year: info.year, start, locked: info.year < start, lines,
+    total: lines.reduce((t, l) => t + l.amount_pence, 0),
+    sug: suggestions(db, eventId), nextPos: places.length ? Math.max(...places) + 1 : 1,
+    members: db.prepare("SELECT id, name FROM users WHERE status='active' OR id IN (SELECT user_id FROM prize_lines WHERE event_id=? AND user_id IS NOT NULL) ORDER BY name").all(eventId),
+    cur: S.currency || '£', errors: st.errors || {}, values: st.values || {}, form: st.form || null, editId: st.editId != null ? Number(st.editId) : null,
+  };
+}
+
+/** Public event page: the event's prizes (only from the start season on, and only once any are entered). */
+function publicSection(db, S, eventId) {
+  const info = yearOfEvent(db, eventId);
+  if (!info || info.year < startSeason(S)) return null;
+  const lines = eventLines(db, eventId);
+  if (!lines.length) return null;
+  return { year: info.year, lines, total: lines.reduce((t, l) => t + l.amount_pence, 0) };
+}
+
+module.exports = { adminSection, publicSection, KINDS, startSeason, parseAmount, fmtMoney, years, pickYear, validateLine, addLine, editLine, deleteLine, getLine, eventLines, seasonEvents, season, suggestions, split, yearOfEvent, thisYear };

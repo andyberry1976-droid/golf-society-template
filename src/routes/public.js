@@ -72,6 +72,7 @@ router.get('/events/:id(\\d+)', wrap((req, res) => {
     })(),
     members: req.user && (req.user.role !== 'member') ? q.activeMembers(db) : [],
     notGoing: db.prepare("SELECT COUNT(*) n FROM rsvps WHERE event_id=? AND status='not_going'").get(e.id).n,
+    prizes: require('./prizes').publicSection(req, e.id),
     bits: e.highlights ? e.highlights.split(/\r?\n/).map((s) => s.trim()).filter(Boolean) : [],
   });
 }));

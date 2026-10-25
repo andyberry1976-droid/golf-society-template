@@ -71,7 +71,7 @@ function seedDemo(db, { now = new Date(), log = () => {} } = {}) {
   // the fictional demo uses the WHS-style engine, position points and the Flamingos branding
   setSetting(db, 'handicap_mode', 'whs');
   setSetting(db, 'oom_default_scheme', JSON.stringify({ positions: [30, 24, 20, 17, 14, 12, 10, 8, 6, 5, 4, 3, 2, 1], participation: 5, bestN: null }));
-  for (const [k, v] of Object.entries({ society_name: 'The Fairway Flamingos Golf Society', short_name: 'Fairway Flamingos', hero_title: 'The Fairway Flamingos', tagline: 'Pink socks. Wonky swings. Serious banter. A friendly society for golfers who take the game lightly and the sausage rolls very seriously.', footer_blurb: 'A fictional society for fun, friendship and fairly flexible rules. Rebrand me in Admin → Settings.' })) setSetting(db, k, v);
+  for (const [k, v] of Object.entries({ society_name: 'The Fairway Flamingos Golf Society', short_name: 'Fairway Flamingos', hero_title: 'The Fairway Flamingos', tagline: 'Pink socks. Wonky swings. Serious banter. A friendly society for golfers who take the game lightly and the sausage rolls very seriously.', footer_blurb: 'A fictional society for fun, friendship and fairly flexible rules.' })) setSetting(db, k, v);
   const Y = now.getFullYear();
   const hash = users.hashPassword(DEMO_PASSWORD);
   // wipe baseline's empty season so ours are canonical

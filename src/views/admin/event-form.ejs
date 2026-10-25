@@ -1,4 +1,5 @@
 <%- include('_top') %>
+<% if (ev && typeof pz !== 'undefined' && pz) { %><p style="margin:0 0 12px"><a class="btn btn-yl btn-sm" href="#prize-money">Prize money ↓<%= pz.lines.length ? ' (' + pz.money(pz.total) + ')' : '' %></a></p><% } %>
 <form class="card form pad-lg" method="post" action="<%= ev ? '/admin/events/' + ev.id : '/admin/events' %>" novalidate><%- include('../partials/csrf') %>
   <%- include('../partials/field', {name:'title', label:'Event name', values: values, errors: errors, attrs:'required maxlength="100"'}) %>
   <div class="cols2">
@@ -63,6 +64,7 @@
   <% } else { %><p class="hint" style="margin-top:10px">Every active member is already in this event.</p><% } %>
 </section>
 <% } %>
+<% if (ev && typeof pz !== 'undefined' && pz) { %><%- include('_prizes', {pz: pz, back: 'edit'}) %><% } %>
 <% if (ev && isAdmin) { %>
 <form method="post" action="/admin/events/<%= ev.id %>/delete" data-confirm="Delete this event and all its RSVPs? This cannot be undone." style="margin-top:22px"><%- include('../partials/csrf') %><button class="btn btn-dn btn-sm" type="submit">Delete event</button></form>
 <% } %>

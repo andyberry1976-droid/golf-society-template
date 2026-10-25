@@ -1,5 +1,5 @@
 <%- include('_top') %>
-<p style="margin-bottom:14px"><a class="btn-link" href="/events/<%= e.id %>">← <%= e.title %></a> · <a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/edit#players">Add / remove players</a> <% if (isAdmin) { %><a class="btn btn-wh" href="/admin/events/<%= e.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %> <% if (isAdmin) { %><a class="btn btn-wh" href="/admin/scores/import?event=<%= e.id %>">Import players &amp; scores (Excel)</a><% } %></p>
+<p style="margin-bottom:14px"><a class="btn-link" href="/events/<%= e.id %>">← <%= e.title %></a> · <a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/edit#players">Add / remove players</a> <% if (typeof pz !== 'undefined' && pz) { %><a class="btn btn-yl btn-sm" href="#prize-money">Prize money ↓</a> <% } %><% if (isAdmin) { %><a class="btn btn-wh" href="/admin/events/<%= e.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %> <% if (isAdmin) { %><a class="btn btn-wh" href="/admin/scores/import?event=<%= e.id %>">Import players &amp; scores (Excel)</a><% } %></p>
 <div class="card" style="margin-bottom:22px">
   <p><b><%= dateRangeLong(e.event_date, e.end_date) %></b> · <%= e.course_name || 'No course set' %><% if (e.course_name) { %> (par <%= e.course_par %><% if (!hcpFixed) { %>, rating <%= e.course_rating %>, slope <%= e.course_slope %><% } %>)<% } %> · <span class="chip <%= e.format_cls %>" style="margin:0"><%= e.format_label %></span></p>
   <p class="hint" style="margin-top:8px">Winner decided by: <b><%= (e.scoring_basis==='stableford' ? 'stableford points (highest)' : e.scoring_basis==='stroke_net' ? 'net strokes (lowest)' : e.scoring_basis==='stroke_gross' ? 'gross strokes (lowest)' : 'positions you type in') %></b>.
@@ -23,4 +23,5 @@
   <div class="fld" style="margin:18px 8px 0"><label for="hl">Highlights of the day (one per line)</label><textarea class="in" id="hl" name="highlights" maxlength="800" placeholder="Nearest the pin: Callum (6ft 2in)&#10;Birdies on the day: 11"><%= e.highlights || '' %></textarea></div>
   <div class="actions" style="margin:18px 8px 0"><button class="btn btn-pk" type="submit">Save results &amp; update handicaps</button><a class="btn btn-wh" href="/events/<%= e.id %>">Cancel</a></div>
 </form>
+<% if (typeof pz !== 'undefined' && pz) { %><%- include('_prizes', {pz: pz, back: 'results'}) %><% } %>
 <%- include('_bot') %>

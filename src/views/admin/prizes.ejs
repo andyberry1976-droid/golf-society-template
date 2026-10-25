@@ -1,4 +1,4 @@
-<%- include('_top', {leadText: 'Type in the prize money for each event: placings, nearest the pins and any other prizes. Nothing is worked out automatically.'}) %>
+<%- include('_top', {leadText: 'Prize money is entered on each event (Admin → Events → edit or enter results → Prize money). This is the season overview; nothing is worked out automatically.'}) %>
 <% if (years.length > 1) { %>
 <form method="get" action="/admin/prizes" class="sortrow" style="max-width:360px;margin-top:16px">
   <div style="flex:1"><label for="pz-year" style="font-weight:900;display:block">Season</label>
@@ -10,7 +10,7 @@
   <% } else { %>
   <div class="xs" tabindex="0" role="region" aria-label="Events in <%= year %>"><table class="rt"><thead><tr><th>Event</th><th>Date</th><th class="r">Prizes</th><th class="r">Total</th><th></th></tr></thead><tbody>
   <% events.forEach(function(e){ %><tr><td class="first" data-l="Event"><strong><%= e.title %></strong></td><td data-l="Date"><%= dateRange(e.event_date, e.end_date) %></td><td class="r" data-l="Prizes"><%= e.lines.length %></td><td class="r" data-l="Total"><%= e.lines.length ? money(e.total) : '–' %></td>
-    <td data-l=""><a class="btn btn-yl btn-sm" href="/admin/prizes/events/<%= e.id %>"><%= e.lines.length ? 'Edit prizes' : 'Enter prizes' %></a></td></tr><% }) %>
+    <td data-l=""><a class="btn btn-yl btn-sm" href="/admin/events/<%= e.id %>/edit#prize-money"><%= e.lines.length ? 'Edit prizes' : 'Enter prizes' %></a></td></tr><% }) %>
   </tbody></table></div>
   <p style="margin-top:10px;font-weight:800">Season total: <%= money(events.reduce(function(s, e){ return s + e.total; }, 0)) %> · <a href="/prize-money?year=<%= year %>">See the public page</a></p>
   <% } %>

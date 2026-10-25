@@ -8,7 +8,7 @@
     "hero_ribbon": "Golf Society",
     "est_text": "Monthly stableford · Order of Merit",
     "tagline": "A friendly golf society. Edit this in sites/<slug>/site.config.json or Admin → Settings.",
-    "footer_blurb": "Rebrand me in Admin → Settings.",
+    "footer_blurb": "Results, stats and banter from the society.",
     "join_blurb": "Fancy a game? Ask a member for the invite code.",
     "logo": null,
     "theme_color": "#064e3b",

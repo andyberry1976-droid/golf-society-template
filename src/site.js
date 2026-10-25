@@ -108,4 +108,7 @@ function themeCss(c) {
   return (decl ? `:root{${decl}}` : '') + extra;
 }
 
-module.exports = { load, validate, toSettings, themeCss, dirFor, SITES_DIR, FEATURE_NAMES, COLOR_VARS, ConfigError };
+/** The starter kit's old “Rebrand me…” footer text: a setup prompt, never shown to the public. */
+const isPlaceholderBlurb = (t) => /Rebrand me in Admin/i.test(String(t || ''));
+
+module.exports = { isPlaceholderBlurb, load, validate, toSettings, themeCss, dirFor, SITES_DIR, FEATURE_NAMES, COLOR_VARS, ConfigError };
