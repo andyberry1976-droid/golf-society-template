@@ -33,6 +33,15 @@ test('Ryder Cup: year dropdown lists every cup, defaults to the latest, ?year= p
     // a cup without named captains shows no captains line
     db.prepare('UPDATE ryder_cups SET captain_a_id=NULL, captain_b_id=NULL WHERE id=?').run(c1);
     const nc = (await c.get('/ryder-cup?year=2024')).text_; assert.doesNotMatch(nc, /Captains:/); assert.doesNotMatch(nc, /\(captain\)/); assert.match(nc, /Team Reds won\./);
+    // optional per-year voice clip: audio + speaker button only on that year's page
+    assert.doesNotMatch(t4, /rc-audio|rc-say/);
+    db.prepare("UPDATE ryder_cups SET audio='/audio/ryder-2024-test.mp3', audio_label='The Wish at Espiche' WHERE id=?").run(c1);
+    const au = (await c.get('/ryder-cup?year=2024')).text_;
+    assert.match(au, /<audio id="rc-audio" preload="auto" data-autoplay src="\/audio\/ryder-2024-test\.mp3"><\/audio>/);
+    assert.match(au, /<button type="button" class="rc-say" id="rc-say"[^>]*aria-label="Play: The Wish at Espiche"/);
+    for (const other of [(await c.get('/ryder-cup')).text_, (await c.get('/ryder-cup?year=2025')).text_]) assert.doesNotMatch(other, /rc-audio|rc-say/);
+    db.prepare("UPDATE ryder_cups SET audio='https://evil.example/x.mp3' WHERE id=?").run(c1);
+    assert.doesNotMatch((await c.get('/ryder-cup?year=2024')).text_, /rc-audio|evil/, 'only local /audio/ files');
     for (const q of ['?year=1999', '?year=abc']) { const r = await c.get('/ryder-cup' + q); assert.equal(r.status, 200); assert.match(r.text_, /<option value="2025" selected/); }
     db.prepare('DELETE FROM ryder_cups').run();
     const e = await c.get('/ryder-cup'); assert.equal(e.status, 200); assert.match(e.text_, /No Ryder Cups on record yet/); assert.doesNotMatch(e.text_, /id="rc-year"/);

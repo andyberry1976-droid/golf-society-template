@@ -15,7 +15,11 @@
 <% var tcol = function(t){ return /\breds?\b/i.test(t) ? 'red' : /\bblues?\b/i.test(t) ? 'blue' : ''; }; %>
 <% cups.forEach(function(c){ var winA = c.score_a > c.score_b; var ca = tcol(c.team_a), cb = tcol(c.team_b); %>
   <section class="card rcup<%= ca ? ' ta-' + ca : '' %><%= cb ? ' tb-' + cb : '' %>" aria-labelledby="rc<%= c.year %>" id="y<%= c.year %>">
-    <h2 id="rc<%= c.year %>"><%= c.name %></h2>
+    <% if (c.audio) { var lbl = c.audio_label || (c.year + ' Ryder Cup'); %>
+    <div class="rc-h2"><h2 id="rc<%= c.year %>"><%= c.name %></h2>
+      <button type="button" class="rc-say" id="rc-say" aria-controls="rc-audio" aria-label="Play: <%= lbl %>" title="Play: <%= lbl %>"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></div>
+    <audio id="rc-audio" preload="auto" data-autoplay src="<%= c.audio %>"></audio>
+    <% } else { %><h2 id="rc<%= c.year %>"><%= c.name %></h2><% } %>
     <div class="rc-final" role="group" aria-label="Final score">
       <div class="rc-tm a<%= winA ? ' win' : '' %>"><span><%= c.team_a %></span><b><%= half(c.score_a) %></b></div>
       <div class="rc-tm b<%= !winA ? ' win' : '' %>"><span><%= c.team_b %></span><b><%= half(c.score_b) %></b></div>

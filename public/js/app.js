@@ -93,6 +93,29 @@
     if (hm && hm[1] !== rcy.getAttribute('data-current') && !/[?&]year=/.test(location.search) && rcy.querySelector('option[value="' + hm[1] + '"]')) location.replace('/ryder-cup?year=' + hm[1] + location.hash);
   }
 
+  /* Ryder Cup: a year's voice clip plays once when the page opens (or on the first interaction if autoplay is blocked); the speaker button replays it */
+  var rca = $('#rc-audio');
+  if (rca) {
+    // play() only succeeds after a real gesture (click/tap/key); scroll/touchstart attempts that are refused keep listening
+    var played = false, busy = false, evs = ['pointerdown', 'pointerup', 'touchend', 'keydown', 'click', 'scroll'];
+    var off = function () { evs.forEach(function (e) { window.removeEventListener(e, first, true); }); };
+    var on = function () { evs.forEach(function (e) { window.addEventListener(e, first, { capture: true, passive: true }); }); };
+    var first = function (e) {
+      if (played || busy) return;
+      if (e && e.target && e.target.closest && e.target.closest('#rc-say')) return;
+      busy = true; rca.currentTime = 0;
+      var p = rca.play();
+      if (p && p.then) p.then(function () { played = true; busy = false; off(); }, function () { busy = false; });
+      else { played = true; off(); }
+    };
+    if (rca.hasAttribute('data-autoplay')) {
+      var p0 = rca.play();
+      if (p0 && p0.then) p0.then(function () { played = true; }, on); else played = true;
+    }
+    var say = $('#rc-say');
+    if (say) say.addEventListener('click', function () { played = true; off(); rca.currentTime = 0; var p = rca.play(); if (p && p.catch) p.catch(function () {}); });
+  }
+
   /* event form: pick sensible defaults when the format changes */
   var fmt = $('#f-format');
   if (fmt) {

@@ -111,7 +111,9 @@ router.get('/ryder-cup', wrap((req, res) => {
     const players = db.prepare('SELECT p.*, u.name, u.status FROM ryder_players p JOIN users u ON u.id=p.user_id WHERE p.cup_id=?').all(c.id)
       .map((p) => ({ ...p, points: pts[p.user_id] || 0 }))
       .sort((x, y) => y.points - x.points || x.name.localeCompare(y.name));
-    return { ...c, captainA: c.captain_a_id ? nm(c.captain_a_id)[0] : null, captainB: c.captain_b_id ? nm(c.captain_b_id)[0] : null, sessions, teamA: players.filter((p) => p.team === 'A'), teamB: players.filter((p) => p.team === 'B') };
+    // only local audio files under /audio/ are played
+    const audio = /^\/audio\/[\w.-]+\.(mp3|ogg|m4a)$/.test(c.audio || '') ? c.audio : null;
+    return { ...c, audio, captainA: c.captain_a_id ? nm(c.captain_a_id)[0] : null, captainB: c.captain_b_id ? nm(c.captain_b_id)[0] : null, sessions, teamA: players.filter((p) => p.team === 'A'), teamB: players.filter((p) => p.team === 'B') };
   });
   res.render('ryder', { title: 'Ryder Cup', active: 'comps', cups, years: all, year: pick ? pick.year : null });
 }));

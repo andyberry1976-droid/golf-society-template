@@ -711,3 +711,8 @@ table.hr{width:100%;border-collapse:collapse;font-weight:800}
 .rc-roster.a h3{color:var(--ta)}.rc-roster.b h3{color:var(--tb)}
 table.rc-pl{width:100%;margin-top:6px}
 .rc-pl td,.rc-pl th{white-space:normal}
+
+/* Ryder Cup voice clip button */
+.rc-h2{display:flex;align-items:center;justify-content:space-between;gap:10px}.rc-h2 h2{margin:0}
+.rc-say{flex:none;display:inline-grid;place-items:center;width:40px;height:40px;border-radius:50%;border:2px solid var(--ink,#1a1f2b);background:var(--ta,#fff);color:#fff;cursor:pointer;box-shadow:0 2px 0 var(--ink,#1a1f2b)}
+.rc-say:hover{filter:brightness(1.08)}.rc-say:active{transform:translateY(2px);box-shadow:none}.rc-say:focus-visible{outline:3px solid var(--tb,#1f5fbf);outline-offset:2px}

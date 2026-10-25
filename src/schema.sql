@@ -331,7 +331,9 @@ CREATE TABLE IF NOT EXISTS ryder_cups (
   captain_b_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   score_a REAL NOT NULL,
   score_b REAL NOT NULL,
-  notes TEXT
+  notes TEXT,
+  audio TEXT,        -- optional clip played when this year's page opens, e.g. /audio/ryder-2024-x.mp3
+  audio_label TEXT   -- what the clip says (button label)
 );
 CREATE TABLE IF NOT EXISTS ryder_players (
   cup_id INTEGER NOT NULL REFERENCES ryder_cups(id) ON DELETE CASCADE,
