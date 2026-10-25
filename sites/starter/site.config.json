@@ -23,6 +23,7 @@
   },
   "settings": {
     "currency": "£",
+    "prize_start_season": "",
     "contact_email": "",
     "invite_code": "CHANGEME",
     "invite_auto_approve": false,

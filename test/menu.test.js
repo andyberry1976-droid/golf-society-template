@@ -6,7 +6,7 @@ const { open, setSetting } = require('../src/db');
 const { seedDemo } = require('../scripts/seed-demo-site');
 const { startApp, Client } = require('./helpers');
 
-const RES = ['/competitions', '/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues', '/honours', '/hall-of-fame', '/records', '/handicaps', '/awards'];
+const RES = ['/competitions', '/standings', '/fedex', '/birdie-league', '/matchplay', '/majors', '/ryder-cup', '/texas-scramble', '/leagues', '/honours', '/hall-of-fame', '/records', '/handicaps', '/awards', '/prize-money'];
 const hrefs = (html) => [...html.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]);
 
 test('menu: short top level, Results dropdown + mobile group + footer column', async () => {

@@ -649,3 +649,24 @@ table.hr{width:100%;border-collapse:collapse;font-weight:800}
 .gt tbody .st small{display:block;font-size:13px;font-weight:700;color:var(--mute)}
 .gt tbody th.st{font-weight:800;color:var(--ink)}
 .fl-grid .tot,.fl-sq .tot{min-width:56px}
+/* ---- prize money ---- */
+.pz-big{font:400 clamp(40px,9vw,64px)/1 var(--f-d);color:var(--pk-t,var(--pk));margin:8px 0 4px}
+.gt .l{text-align:left}
+.gt tfoot th,.gt tfoot td{border-bottom:0;border-top:3px solid var(--ink)}
+.pz-events{display:grid;gap:10px;margin-top:10px}
+.pz-ev{border:3px solid var(--line);border-radius:14px;background:#fff;overflow:hidden}
+.pz-ev[open]{border-color:var(--ink)}
+.pz-ev summary{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px;padding:8px 14px;cursor:pointer;list-style:none;font-weight:800}
+.pz-ev summary::-webkit-details-marker{display:none}
+.pz-ev summary::after{content:'+';font:400 24px/1 var(--f-d);margin-left:6px}
+.pz-ev[open] summary::after{content:'–'}
+.pz-et{display:flex;flex-direction:column;min-width:0}.pz-et small{font-weight:700;color:var(--mute)}
+.pz-etot{margin-left:auto;font:400 22px/1 var(--f-d);color:var(--pk-t,var(--pk));white-space:nowrap}
+.pz-ev .xs{margin:0 10px 10px}
+.pz-row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:12px 0;border-bottom:2px dashed var(--line)}
+.pz-edit{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;flex:1 1 560px}
+.pz-edit .fld{flex:1 1 120px;min-width:110px}
+.pz-edit .ferr{flex-basis:100%}
+.pz-kind{flex-basis:100%;font:400 20px/1.1 var(--f-d)}
+.pz-chk{display:flex;gap:8px;align-items:center;min-height:44px;margin-top:22px}
+.pz-chk input{width:22px;height:22px}

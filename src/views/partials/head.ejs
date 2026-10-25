@@ -8,7 +8,7 @@
 <title><%= title ? title + ' · ' + S.short_name : S.society_name %></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preload" href="/fonts/bagel-fat-one-400.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="/css/app.css?v=8" />
+<link rel="stylesheet" href="/css/app.css?v=9" />
 <% if (themeCss) { %><style><%- themeCss %></style><% } %>
 </head>
 <body>
@@ -21,8 +21,8 @@
       <span<%- logoWordmark ? ' class="sr"' : '' %>><b><%= S.short_name %></b><small>Golf Society</small></span>
     </a>
     <nav class="nav" aria-label="Primary">
-      <% var RES = [['/competitions','All competitions'],['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records'],['/handicaps','Handicap Records'],['/awards','Awards']].filter(function(n){ return n === null || F.link(n[0]); });
-         var resActive = ['standings','comps','honours','handicaps','fame','records','awards'].indexOf(active) >= 0;
+      <% var RES = [['/competitions','All competitions'],['/standings','Order of Merit'],['/fedex','FedEx Cup'],['/birdie-league','Birdie League'],['/matchplay','Matchplay'],['/majors','Majors &amp; Euro'],['/ryder-cup','Ryder Cup'],['/texas-scramble','Texas Scramble'],['/leagues','Leagues'],null,['/honours','Roll of Honour'],['/hall-of-fame','Hall of Fame'],['/records','Records'],['/handicaps','Handicap Records'],['/awards','Awards'],['/prize-money','Prize Money']].filter(function(n){ return n === null || F.link(n[0]); });
+         var resActive = ['standings','comps','honours','handicaps','fame','records','awards','prizes'].indexOf(active) >= 0;
          var curPath = (typeof reqPath !== 'undefined' && reqPath) || '';
          var TOP_A = [['home','Home','/'],['events','Events','/events'],['players','Players','/players']].filter(function(n){ return F.link(n[2]); });
          var TOP_B = [['fantasy','Fantasy League','/fantasy-league'],['rules','Rules','/rules'],['birthdays','Birthdays','/birthdays']].filter(function(n){ return F.link(n[2]); });

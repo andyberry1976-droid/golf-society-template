@@ -21,6 +21,7 @@ const FEATURES = [
   { key: 'ryder', label: 'Ryder Cup', hint: 'The Ryder Cup history page: teams, captains, sessions and player points.', paths: [/^\/ryder-cup$/] },
   { key: 'birthdays', label: 'Birthdays', hint: 'The Birthdays page (day and month only, never the year) and a home-page banner on birthday days.', paths: [/^\/birthdays$/] },
   { key: 'fantasy', label: 'Fantasy League (teaser)', hint: 'A “Coming in 2027” teaser page for the Fantasy League. No functionality yet.', paths: [/^\/fantasy-league$/] },
+  { key: 'prizes', label: 'Prize Money', hint: 'The Prize Money page (Results menu): prizes typed in by an admin per event, with a season leaderboard.', paths: [/^\/prize-money$/, /^\/admin\/prizes(\/|$)/] },
   { key: 'scramble', label: 'Texas Scramble', hint: 'Team scramble results (not part of the Order of Merit or any stats).', paths: [/^\/texas-scramble$/] },
   { key: 'odds', label: 'Odds (for fun)', hint: 'Fun odds for each player on the next upcoming event page, worked out from this season’s scores.', paths: [] },
   { key: 'engine', label: 'Custom competitions & leagues', hint: 'Any format and scoring (presets: Stableford, medal, par/bogey, scramble, better-ball, matchplay), hole-by-hole or totals, plus custom league tables.', paths: [/^\/leagues(\/|$)/, /^\/comp-results(\/|$)/, /^\/admin\/competition-types(\/|$)/, /^\/admin\/engine(\/|$)/, /^\/admin\/leagues(\/|$)/] },

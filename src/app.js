@@ -136,6 +136,7 @@ function createApp({ db, config }) {
 
   app.use(require('./routes/public'));
   app.use(require('./routes/comps'));
+  app.use(require('./routes/prizes'));
   app.use(require('./routes/auth'));
   app.use(require('./routes/member'));
   app.use('/admin', require('./routes/admin-comps'));

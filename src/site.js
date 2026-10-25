@@ -81,6 +81,7 @@ function toSettings(c) {
     footer_blurb: b.footer_blurb || c.name,
     join_blurb: b.join_blurb || '',
     currency: s.currency || '£',
+    prize_start_season: s.prize_start_season ? String(s.prize_start_season) : '', // first Prize Money season (blank = the current year)
     contact_email: s.contact_email || '',
     invite_code: s.invite_code || '',
     invite_auto_approve: b01(s.invite_auto_approve),

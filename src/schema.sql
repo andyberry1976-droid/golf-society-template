@@ -451,3 +451,20 @@ CREATE TABLE IF NOT EXISTS fantasy_teams (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_fantasy_teams_name ON fantasy_teams(season, team_name COLLATE NOCASE);
+
+-- Prize money (entered by hand by an admin, per event; never worked out from results).
+-- kind: 'place' (position 1, 2, 3 … ties = same position twice), 'ntp' (nearest the pin, label = hole), 'other' (label = e.g. Longest drive).
+CREATE TABLE IF NOT EXISTS prize_lines (
+  id INTEGER PRIMARY KEY,
+  event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('place','ntp','other')),
+  position INTEGER,
+  label TEXT,
+  amount_pence INTEGER NOT NULL CHECK (amount_pence > 0),
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  winner_name TEXT NOT NULL,
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_prize_lines_event ON prize_lines(event_id);

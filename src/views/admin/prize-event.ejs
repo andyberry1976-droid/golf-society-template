@@ -1,0 +1,68 @@
+<%- include('_top', {leadText: 'Placings, nearest the pins and any other prizes for this event. Typed in by hand; results are only used to suggest the winners.'}) %>
+<% function memberSelect(id, name, sel, label) { var s = '<select class="in" id="' + id + '" name="' + name + '"' + (label ? ' aria-label="' + label + '"' : '') + '><option value="">— not a member / type a name —</option>';
+     members.forEach(function(m){ s += '<option value="' + m.id + '"' + (String(sel) === String(m.id) ? ' selected' : '') + '>' + escapeHtml(m.name) + '</option>'; }); return s + '</select>'; }
+   function escapeHtml(t){ return String(t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+   var er = errors || {}; var vv = values || {};
+   var fv = function(k, kind){ return form === kind ? vv : {}; };
+   var errBox = function(kind, id){ return (form === kind && (kind !== 'edit' || editId === id) && Object.keys(er).length) ? '<p class="ferr" role="alert"><strong>Not saved:</strong> ' + escapeHtml(Object.values(er).join(' · ')) + '</p>' : ''; };
+   var arr = function(v){ return v == null ? [] : Array.isArray(v) ? v : [v]; };
+   var sp = sug.byPos[nextPos] || []; %>
+<p style="margin-top:14px"><a href="/admin/prizes?year=<%= year %>">← All <%= year %> events</a> · <a href="/prize-money?year=<%= year %>#pz-e<%= ev.id %>">Public page</a></p>
+<section class="card" style="margin-top:12px" aria-labelledby="pz-h"><h2 id="pz-h"><%= ev.title %></h2>
+  <p style="margin-top:6px;font-weight:800"><%= dateRangeLong(ev.event_date, ev.end_date) %> <%= ev.event_date.slice(0,4) %><% if (ev.course_name) { %> · <%= ev.course_name %><% } %></p>
+  <% if (locked) { %><p class="ferr" role="alert" style="margin-top:8px">Prize money starts with the <%= start %> season, so this event can’t have prizes.</p><% } %>
+  <% if (sug.rows.length) { %><p class="hint" style="margin-top:8px">From the results: <%= sug.rows.slice(0, 6).map(function(r){ return ordinal(r.position) + ' ' + r.name; }).join(' · ') %></p><% } %>
+</section>
+
+<section class="card" id="pz-lines" aria-labelledby="pz-lh"><h2 id="pz-lh">Prizes entered<% if (lines.length) { %>: <%= money(lines.reduce(function(s, l){ return s + l.amount_pence; }, 0)) %><% } %></h2>
+  <% if (!lines.length) { %><p style="margin-top:8px;font-weight:700">None yet. Add them below.</p><% } %>
+  <% lines.forEach(function(l){ var e = (form === 'edit' && editId === l.id) ? vv : null; %>
+  <div class="pz-row">
+    <form class="form pz-edit" method="post" action="/admin/prizes/lines/<%= l.id %>"><%- include('../partials/csrf') %>
+      <span class="pz-kind"><%= l.title %></span>
+      <% if (l.kind === 'place') { %><div class="fld"><label for="pz-pos-<%= l.id %>">Position</label><input class="in" id="pz-pos-<%= l.id %>" name="position" inputmode="numeric" value="<%= e ? e.position : l.position %>"></div>
+      <% } else { %><div class="fld"><label for="pz-lab-<%= l.id %>"><%= l.kind === 'ntp' ? 'Hole' : 'Prize' %></label><input class="in" id="pz-lab-<%= l.id %>" name="label" maxlength="60" value="<%= e ? e.label : (l.label || '') %>"></div><% } %>
+      <div class="fld"><label for="pz-amt-<%= l.id %>">Amount (<%= cur %>)</label><input class="in" id="pz-amt-<%= l.id %>" name="amount" inputmode="decimal" value="<%= e ? e.amount : (l.amount_pence / 100).toFixed(2) %>"></div>
+      <div class="fld"><label for="pz-u-<%= l.id %>">Winner</label><%- memberSelect('pz-u-' + l.id, 'user_id', e ? e.user_id : (l.user_id || ''), '') %></div>
+      <div class="fld"><label for="pz-n-<%= l.id %>">or name</label><input class="in" id="pz-n-<%= l.id %>" name="winner_name" maxlength="60" value="<%= e ? e.winner_name : (l.user_id ? '' : l.winner_name) %>"></div>
+      <button class="btn btn-yl btn-sm">Save</button>
+      <%- errBox('edit', l.id) %>
+    </form>
+    <form method="post" action="/admin/prizes/lines/<%= l.id %>/delete" class="pz-del"><%- include('../partials/csrf') %><button class="btn btn-wh btn-sm" aria-label="Delete <%= l.title %> (<%= l.name %>)">Delete</button></form>
+  </div>
+  <% }) %>
+</section>
+
+<% if (!locked) { var pv = fv('', 'place'); var pu = arr(pv.w_user), pn = arr(pv.w_name); %>
+<section class="card" id="pz-add-place" aria-labelledby="pz-ap"><h2 id="pz-ap">Add a placing prize</h2>
+  <form class="form" method="post" action="/admin/prizes/events/<%= ev.id %>/lines#pz-add-place" novalidate style="margin-top:10px"><%- include('../partials/csrf') %><input type="hidden" name="kind" value="place">
+    <div class="cols3">
+      <div class="fld"><label for="pz-ap-pos">Position</label><input class="in" id="pz-ap-pos" name="position" type="number" min="1" step="1" inputmode="numeric" value="<%= pv.position || nextPos %>"><p class="hint">1 = 1st, 2 = 2nd …</p></div>
+      <div class="fld"><label for="pz-ap-amt">Amount (<%= cur %>)</label><input class="in" id="pz-ap-amt" name="amount" inputmode="decimal" placeholder="e.g. 40 or 12.50" value="<%= pv.amount || '' %>"></div>
+      <div class="fld"><label class="pz-chk"><input type="checkbox" name="split" value="1"<%= (form === 'place' ? pv.split === '1' : true) ? ' checked' : '' %>> Tie: split the amount between the winners</label><p class="hint">Untick to give each tied winner the full amount.</p></div>
+    </div>
+    <% for (var i = 0; i < 3; i++) { var sel = form === 'place' ? (pu[i] || '') : (sp[i] ? sp[i].user_id : ''); %>
+    <div class="cols2">
+      <div class="fld"><label for="pz-ap-u<%= i %>"><%= i ? 'Tied winner ' + (i + 1) + ' (optional)' : 'Winner' %></label><%- memberSelect('pz-ap-u' + i, 'w_user', sel, '') %><% if (!i && sp.length && form !== 'place') { %><p class="hint">Suggested from the results (<%= ordinal(nextPos) %>).</p><% } %></div>
+      <div class="fld"><label for="pz-ap-n<%= i %>">or name</label><input class="in" id="pz-ap-n<%= i %>" name="w_name" maxlength="60" value="<%= pn[i] || '' %>"></div>
+    </div><% } %>
+    <%- errBox('place') %>
+    <button class="btn btn-pk">Add placing</button>
+  </form>
+</section>
+<% [['ntp', 'Add a nearest the pin', 'Hole (optional)', 'e.g. 7th'], ['other', 'Add another prize', 'Prize', 'e.g. Longest drive']].forEach(function(k){ var v = fv('', k[0]); %>
+<section class="card" id="pz-add-<%= k[0] %>" aria-labelledby="pz-a-<%= k[0] %>"><h2 id="pz-a-<%= k[0] %>"><%= k[1] %></h2>
+  <form class="form" method="post" action="/admin/prizes/events/<%= ev.id %>/lines#pz-add-<%= k[0] %>" novalidate style="margin-top:10px"><%- include('../partials/csrf') %><input type="hidden" name="kind" value="<%= k[0] %>">
+    <div class="cols2">
+      <div class="fld"><label for="pz-<%= k[0] %>-lab"><%= k[2] %></label><input class="in" id="pz-<%= k[0] %>-lab" name="label" maxlength="60" placeholder="<%= k[3] %>" value="<%= v.label || '' %>"></div>
+      <div class="fld"><label for="pz-<%= k[0] %>-amt">Amount (<%= cur %>)</label><input class="in" id="pz-<%= k[0] %>-amt" name="amount" inputmode="decimal" value="<%= v.amount || '' %>"></div>
+      <div class="fld"><label for="pz-<%= k[0] %>-u">Winner</label><%- memberSelect('pz-' + k[0] + '-u', 'user_id', v.user_id || '', '') %></div>
+      <div class="fld"><label for="pz-<%= k[0] %>-n">or name</label><input class="in" id="pz-<%= k[0] %>-n" name="winner_name" maxlength="60" value="<%= v.winner_name || '' %>"></div>
+    </div>
+    <%- errBox(k[0]) %>
+    <button class="btn btn-pk"><%= k[0] === 'ntp' ? 'Add nearest the pin' : 'Add prize' %></button>
+  </form>
+</section>
+<% }) %>
+<% } %>
+<%- include('_bot') %>
