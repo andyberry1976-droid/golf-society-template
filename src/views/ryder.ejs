@@ -12,15 +12,16 @@
     </select><noscript><button class="btn btn-pk btn-sm">Go</button></noscript>
   </form>
 <% } %>
-<% cups.forEach(function(c){ var winA = c.score_a > c.score_b; %>
-  <section class="card rcup" aria-labelledby="rc<%= c.year %>" id="y<%= c.year %>">
+<% var tcol = function(t){ return /\breds?\b/i.test(t) ? 'red' : /\bblues?\b/i.test(t) ? 'blue' : ''; }; %>
+<% cups.forEach(function(c){ var winA = c.score_a > c.score_b; var ca = tcol(c.team_a), cb = tcol(c.team_b); %>
+  <section class="card rcup<%= ca ? ' ta-' + ca : '' %><%= cb ? ' tb-' + cb : '' %>" aria-labelledby="rc<%= c.year %>" id="y<%= c.year %>">
     <h2 id="rc<%= c.year %>"><%= c.name %></h2>
     <div class="rc-final" role="group" aria-label="Final score">
       <div class="rc-tm a<%= winA ? ' win' : '' %>"><span><%= c.team_a %></span><b><%= half(c.score_a) %></b></div>
       <div class="rc-tm b<%= !winA ? ' win' : '' %>"><span><%= c.team_b %></span><b><%= half(c.score_b) %></b></div>
     </div>
     <p class="sr rc-score"><%= c.team_a %> <%= half(c.score_a) %> – <%= half(c.score_b) %> <%= c.team_b %></p>
-    <p class="muted" style="margin-top:8px"><%= winA ? c.team_a : c.team_b %> won. Captains: <%= c.captainA %> and <%= c.captainB %>.</p>
+    <p class="muted" style="margin-top:8px"><%= winA ? c.team_a : c.team_b %> won.<% if (c.captainA && c.captainB) { %> Captains: <%= c.captainA %> and <%= c.captainB %>.<% } %></p>
 
     <% c.sessions.forEach(function(s){ %>
       <div class="rc-sess">

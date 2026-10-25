@@ -29,6 +29,10 @@ test('Ryder Cup: year dropdown lists every cup, defaults to the latest, ?year= p
     const t4 = (await c.get('/ryder-cup?year=2024')).text_;
     assert.match(t4, /<option value="2024" selected/); assert.match(t4, /Cup 2024/); assert.doesNotMatch(t4, /Cup 2025<\/h2>/);
     assert.match(t4, /<b>3&amp;2<\/b>/); assert.match(t4, /<b>Halved<\/b>/); assert.match(t4, /session 1–0 · running 1–0/); assert.match(t4, /running 1½–½/);
+    assert.match(t4, /class="card rcup ta-red tb-blue"/, 'Reds/Blues colours'); assert.doesNotMatch(t, /ta-red|tb-blue/);
+    // a cup without named captains shows no captains line
+    db.prepare('UPDATE ryder_cups SET captain_a_id=NULL, captain_b_id=NULL WHERE id=?').run(c1);
+    const nc = (await c.get('/ryder-cup?year=2024')).text_; assert.doesNotMatch(nc, /Captains:/); assert.doesNotMatch(nc, /\(captain\)/); assert.match(nc, /Team Reds won\./);
     for (const q of ['?year=1999', '?year=abc']) { const r = await c.get('/ryder-cup' + q); assert.equal(r.status, 200); assert.match(r.text_, /<option value="2025" selected/); }
     db.prepare('DELETE FROM ryder_cups').run();
     const e = await c.get('/ryder-cup'); assert.equal(e.status, 200); assert.match(e.text_, /No Ryder Cups on record yet/); assert.doesNotMatch(e.text_, /id="rc-year"/);

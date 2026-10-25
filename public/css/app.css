@@ -669,6 +669,10 @@ table.hr{width:100%;border-collapse:collapse;font-weight:800}
 /* Ryder Cup: year picker + match cards (team A = --em, team B = --pk, so themes recolour them) */
 .rcup{--ta:var(--em);--tb:var(--pk);--ta-l:color-mix(in srgb,var(--em) 14%,#fff);--tb-l:color-mix(in srgb,var(--pk) 16%,#fff)}
 .rcup h2{overflow-wrap:normal;word-break:normal}
+/* teams named Reds / Blues get their own colours */
+.rcup.ta-red{--ta:#c62828;--ta-l:color-mix(in srgb,#c62828 14%,#fff)}.rcup.tb-red{--tb:#c62828;--tb-l:color-mix(in srgb,#c62828 14%,#fff)}
+.rcup.ta-blue{--ta:#1f5fbf;--ta-l:color-mix(in srgb,#1f5fbf 14%,#fff)}.rcup.tb-blue{--tb:#1f5fbf;--tb-l:color-mix(in srgb,#1f5fbf 14%,#fff)}
+.rcup.tb-red .rc-m.wb .rc-res :is(b,small),.rcup.tb-blue .rc-m.wb .rc-res :is(b,small),.rcup.tb-red .rc-tm.b.win,.rcup.tb-blue .rc-tm.b.win{color:#fff}
 .rc-pick{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;max-width:560px}
 .rc-pick label{font-weight:900;font-size:18px}
 .rc-pick select{flex:1;min-width:0;min-height:48px;font-weight:800}
