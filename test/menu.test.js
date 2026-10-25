@@ -21,7 +21,7 @@ test('menu: short top level, Players and Results dropdowns + mobile groups + foo
     const nav = h.slice(h.indexOf('aria-label="Primary"'), h.indexOf('</nav>', h.indexOf('aria-label="Primary"')));
     const dd = (id) => { const st = nav.indexOf(`id="${id}"`); return nav.slice(st, nav.indexOf('</div></div>', st)); };
     const top = hrefs(nav.replace(/<div class="dd" data-dd>[\s\S]*?<\/div><\/div>/g, ''));
-    assert.deepEqual(top, ['/', '/events', '/fantasy-league', '/rules', '/birthdays']);
+    assert.deepEqual(top, ['/', '/events', '/fantasy-league', '/rules']);
     assert.ok(nav.indexOf('aria-controls="dd-players"') < nav.indexOf('aria-controls="dd-results"'), 'Players before Results');
     assert.match(nav, /<button type="button" class="dd-b[^"]*" aria-expanded="false" aria-controls="dd-players"[^>]*>Players/);
     assert.match(nav, /<button type="button" class="dd-b[^"]*" aria-expanded="false" aria-controls="dd-results"[^>]*>Results/);
@@ -42,7 +42,7 @@ test('menu: short top level, Players and Results dropdowns + mobile groups + foo
     assert.match(h, /<html lang="en-GB" class="no-js">/, 'no-JS fallback hook');
     const foot = h.slice(h.indexOf('<footer'));
     const col = (name) => { const st = foot.indexOf(`<h2>${name}</h2>`); return foot.slice(st, foot.indexOf('</ul>', st)); };
-    const ex = col('Explore'); assert.deepEqual(hrefs(ex).slice(-1), ['/birthdays'], 'Birthdays last in Explore'); assert.ok(!hrefs(ex).includes('/players'));
+    const ex = col('Explore'); assert.ok(!hrefs(ex).includes('/birthdays'), 'no Birthdays link in Explore'); assert.ok(!hrefs(h.slice(0, h.indexOf('<main'))).includes('/birthdays'), 'no Birthdays link in the menus'); assert.ok(!hrefs(ex).includes('/players'));
     assert.deepEqual(hrefs(col('Players')), PLY, 'footer Players column'); assert.deepEqual(hrefs(col('Results')), RES, 'footer Results column'); assert.deepEqual(hrefs(col('Honours')), HON, 'footer Honours column');
     // on a Results page that group is open and the page is marked current; Players stays closed
     let r = (await c.get('/standings')).text_;

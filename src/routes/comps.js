@@ -118,12 +118,8 @@ router.get('/ryder-cup', wrap((req, res) => {
 
 router.get('/texas-scramble', (req, res) => res.render('scramble', { title: 'Texas Scramble', active: 'comps', events: require('../lib/scramble').list(req.app.locals.db) }));
 
-router.get('/birthdays', wrap((req, res) => {
-  const db = req.app.locals.db; const B = require('../lib/birthdays');
-  const today = B.londonToday(); const L = B.list(db, today);
-  const people = L.today.map((p) => ({ ...p, highlights: B.highlights(db, p.id) }));
-  res.render('birthdays', { title: 'Birthdays', active: 'birthdays', today, todayLabel: B.dayMonth(today), people, upcoming: L.upcoming });
-}));
+// The public Birthdays page was retired (Oct 2026); old links go home. Dates of birth stay admin-only.
+router.get('/birthdays', (req, res) => res.redirect(301, '/'));
 
 // the published price list (sites/<site>/fantasy-prices.json) for the next Fantasy League season
 function fantasyBase(req) {

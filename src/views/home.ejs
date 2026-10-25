@@ -39,9 +39,6 @@
     <% } %>
   </div>
 </section>
-<% if (!locked && bdays && bdays.length) { %><div class="wrap" style="margin-top:18px"><a class="card bday-banner" href="/birthdays" style="display:block;text-decoration:none;color:inherit;font-weight:800">🎂 Happy birthday, <%= bdays.map(function(b){ return b.name; }).join(' and ') %>! <span style="font-weight:600">See the career highlights →</span></a></div>
-<div class="bday-balloons" id="bday-balloons" data-date="<%= bdayDate %>" hidden aria-hidden="true"><% bdays.forEach(function(b){ %><span class="bb bb-named"><span class="bb-b">🎈</span><span class="bb-l">Happy Birthday <%= b.name %>!</span></span><% }) %></div><% } %>
-
 <% if (!locked) { %>
 <% if (latest) { %>
 <div class="wrap latest" id="latest">

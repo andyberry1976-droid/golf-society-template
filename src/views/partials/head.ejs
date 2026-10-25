@@ -8,7 +8,7 @@
 <title><%= title ? title + ' · ' + S.short_name : S.society_name %></title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 <link rel="preload" href="/fonts/bagel-fat-one-400.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="stylesheet" href="/css/app.css?v=13" />
+<link rel="stylesheet" href="/css/app.css?v=14" />
 <% if (themeCss) { %><style><%- themeCss %></style><% } %>
 </head>
 <body>
@@ -29,7 +29,7 @@
          var honActive = ['honours','fame','records'].indexOf(active) >= 0;
          var curPath = (typeof reqPath !== 'undefined' && reqPath) || '';
          var TOP_A = [['home','Home','/'],['events','Events','/events']].filter(function(n){ return F.link(n[2]); });
-         var TOP_B = [['fantasy','Fantasy League','/fantasy-league'],['rules','Rules','/rules'],['birthdays','Birthdays','/birthdays']].filter(function(n){ return F.link(n[2]); });
+         var TOP_B = [['fantasy','Fantasy League','/fantasy-league'],['rules','Rules','/rules']].filter(function(n){ return F.link(n[2]); });
          var hasRes = RES.length > 0; %>
       <% TOP_A.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
       <% if (PLY.length) { %><div class="dd" data-dd>

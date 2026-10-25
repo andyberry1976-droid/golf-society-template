@@ -31,25 +31,6 @@
     d.addEventListener('toggle', function () { s.setAttribute('aria-expanded', String(d.open)); });
   });
 
-  /* birthday balloons: every home visit on a birthday, skipped for reduced motion */
-  (function () {
-    var bb = $('#bday-balloons'); if (!bb || reduced) return;
-    bb.hidden = false;
-    var named = $$('.bb-named', bb);
-    named.forEach(function (n, i) { n.style.left = ((i + 1) * 100 / (named.length + 1)) + '%'; n.style.animationDelay = (0.3 + i * 0.6) + 's'; });
-    var narrow = window.matchMedia && window.matchMedia('(max-width: 600px)').matches;
-    var lanes = named.map(function (n, i) { return (i + 1) * 100 / (named.length + 1); });
-    for (var i = 0; i < (narrow ? 8 : 14); i++) {
-      var s = document.createElement('span'); s.className = 'bb'; s.textContent = '🎈';
-      var x, tries = 0; // on phones keep small balloons out of the named balloons' lanes
-      do { x = 4 + Math.random() * 90; } while (narrow && tries++ < 30 && lanes.some(function (l) { return Math.abs(x - l) < 24; }));
-      s.style.left = x + '%'; s.style.animationDelay = (Math.random() * 1.5) + 's';
-      s.style.animationDuration = (4.5 + Math.random() * 1.5) + 's'; s.style.fontSize = (narrow ? 20 + Math.random() * 12 : 26 + Math.random() * 22) + 'px';
-      bb.appendChild(s);
-    }
-    setTimeout(function () { bb.parentNode && bb.parentNode.removeChild(bb); }, 7500);
-  })();
-
   /* mobile nav */
   var tg = $('#nav-toggle'), mn = $('#mobile-nav');
   if (tg && mn) {

@@ -33,7 +33,6 @@ router.get('/', wrap((req, res) => {
   res.render('home', {
     title: null, active: 'home', locked: false, upcoming, nextEvent: upcoming[0] || null, latest, podium, bits,
     hl, om, season, records: recs.slice(0, 6), honours, awards, rsvps: q.myRsvps(db, req.user && req.user.id),
-    bdays: req.features.on.birthdays ? require('../lib/birthdays').list(db).today : [], bdayDate: require('../lib/birthdays').londonToday(),
   });
 }));
 
