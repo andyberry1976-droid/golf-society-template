@@ -14,7 +14,7 @@
 <p class="muted" style="margin-bottom:12px"><%= season ? season.name + ' events' : 'All events' %>, newest first.</p>
 <section class="card" style="padding:8px 10px 12px">
 <table class="rt"><thead><tr><th>Date</th><th>Event</th><th>Season</th><th>Places</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-<% events.forEach(function(e){ %><tr><td class="first" data-l="Date"><%= dateShort(e.event_date) %></td><td data-l="Event"><a class="rowlink" href="/events/<%= e.id %>" style="font-weight:900;text-decoration:underline"><%= e.title %></a></td><td data-l="Season"><%= e.season_name %></td>
+<% events.forEach(function(e){ %><tr><td class="first" data-l="Date"><%= dateRange(e.event_date, e.end_date) %></td><td data-l="Event"><a class="rowlink" href="/events/<%= e.id %>" style="font-weight:900;text-decoration:underline"><%= e.title %></a></td><td data-l="Season"><%= e.season_name %></td>
 <td data-l="Places"><%= e.capacity != null ? e.going + '/' + e.capacity : e.going %><%= e.waitlist ? ' +' + e.waitlist + ' wait' : '' %></td>
 <td data-l="Status"><span class="badge <%= e.status==='completed' ? 'ok' : (e.status==='cancelled' ? 'bad' : (e.event_date < today ? 'warn' : '')) %>"><%= e.status==='scheduled' && e.event_date < today ? 'needs results' : e.status %></span></td>
 <td class="r"><div class="actions" style="justify-content:flex-end"><a class="btn btn-wh btn-sm" href="/admin/events/<%= e.id %>/edit">Edit</a><a class="btn btn-pk btn-sm" href="/admin/events/<%= e.id %>/edit#players">Players</a><a class="btn btn-yl btn-sm" href="/admin/events/<%= e.id %>/results">Results</a></div></td></tr><% }) %>

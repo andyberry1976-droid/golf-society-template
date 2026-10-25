@@ -84,6 +84,7 @@ CREATE TABLE IF NOT EXISTS events (
   title TEXT NOT NULL,
   course_id INTEGER REFERENCES courses(id),
   event_date TEXT NOT NULL,
+  end_date TEXT, -- multi-day events: last day (NULL = same day as event_date)
   tee_time TEXT NOT NULL DEFAULT '09:00',
   format TEXT NOT NULL DEFAULT 'stableford',
   scoring_basis TEXT NOT NULL DEFAULT 'stableford' CHECK (scoring_basis IN ('stableford','stroke_net','stroke_gross','manual')),
@@ -426,3 +427,27 @@ CREATE TABLE IF NOT EXISTS engine_results (
   computed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (event_id, user_id)
 );
+
+-- Fantasy League admin entries: golfers added to the pickable pool (on top of the price list) and teams entered by an admin
+CREATE TABLE IF NOT EXISTS fantasy_pool (
+  id INTEGER PRIMARY KEY,
+  season INTEGER NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  price REAL NOT NULL CHECK (price > 0 AND price <= 50),
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fantasy_pool_name ON fantasy_pool(season, name COLLATE NOCASE);
+CREATE TABLE IF NOT EXISTS fantasy_teams (
+  id INTEGER PRIMARY KEY,
+  season INTEGER NOT NULL,
+  manager_name TEXT NOT NULL,
+  team_name TEXT NOT NULL,
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  picks TEXT NOT NULL, -- JSON [{name, user_id, price}] as priced when entered
+  captain TEXT NOT NULL,
+  created_by INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fantasy_teams_name ON fantasy_teams(season, team_name COLLATE NOCASE);

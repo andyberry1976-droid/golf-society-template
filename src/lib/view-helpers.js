@@ -24,8 +24,29 @@ function spark(values, gid) {
   return `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Handicap index over the last ${t.length} changes: from ${t[0].toFixed(1)} to ${t[t.length - 1].toFixed(1)}"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d28d9" stop-opacity=".35"/><stop offset="1" stop-color="#6d28d9" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="#6d28d9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>${dots}<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="6" fill="#d4168f" stroke="#23123b" stroke-width="2.5"/></svg>`;
 }
 
+/** Date range for multi-day events (end blank or same day = a one-day event, shown exactly as before). */
+const multiDay = (a, b) => !!(a && b && b > a);
+function dateRange(a, b) {
+  const p = parts(a); if (!multiDay(a, b)) return `${p.d} ${MONTHS[p.m - 1]} ${p.y}`;
+  const q = parts(b);
+  if (p.y === q.y && p.m === q.m) return `${p.d}–${q.d} ${MONTHS[q.m - 1]} ${q.y}`;
+  if (p.y === q.y) return `${p.d} ${MONTHS[p.m - 1]} – ${q.d} ${MONTHS[q.m - 1]} ${q.y}`;
+  return `${p.d} ${MONTHS[p.m - 1]} ${p.y} – ${q.d} ${MONTHS[q.m - 1]} ${q.y}`;
+}
+function dateRangeLong(a, b, withYear = false) {
+  const p = parts(a); const y = (x) => (withYear ? ' ' + x.y : '');
+  if (!multiDay(a, b)) return `${FULL_DAYS[p.dow]} ${p.d} ${FULL_MONTHS[p.m - 1]}${y(p)}`;
+  const q = parts(b);
+  if (p.y === q.y && p.m === q.m) return `${FULL_DAYS[p.dow]} ${p.d} – ${FULL_DAYS[q.dow]} ${q.d} ${FULL_MONTHS[q.m - 1]}${y(q)}`;
+  if (p.y === q.y) return `${FULL_DAYS[p.dow]} ${p.d} ${FULL_MONTHS[p.m - 1]} – ${FULL_DAYS[q.dow]} ${q.d} ${FULL_MONTHS[q.m - 1]}${y(q)}`;
+  return `${FULL_DAYS[p.dow]} ${p.d} ${FULL_MONTHS[p.m - 1]} ${p.y} – ${FULL_DAYS[q.dow]} ${q.d} ${FULL_MONTHS[q.m - 1]} ${q.y}`;
+}
+const dayCount = (a, b) => (multiDay(a, b) ? Math.round((Date.parse(b + 'T12:00:00Z') - Date.parse(a + 'T12:00:00Z')) / 864e5) + 1 : 1);
+
 module.exports = {
-  spark,
+  spark, multiDay, dateRange, dayCount,
+  dateRangeLong: (a, b) => dateRangeLong(a, b, false),
+  dateRangeLongY: (a, b) => dateRangeLong(a, b, true),
   monthShort: (iso) => MONTHS[parts(iso).m - 1],
   dayNum: (iso) => parts(iso).d,
   dowShort: (iso) => DAYS[parts(iso).dow],

@@ -73,7 +73,7 @@
     <h2 id="rh">Recent results</h2>
     <% if (results.length) { %>
     <table class="rt" style="margin-top:10px"><thead><tr><th>Date</th><th>Event</th><th>Pos</th><th>Gross</th><th>Net</th><th>Stb</th><th>HCP</th><th>OoM</th></tr></thead><tbody>
-      <% results.slice(0, 15).forEach(function(r){ %><tr><td class="first" data-l="Date"><%= dateShort(r.event_date) %></td>
+      <% results.slice(0, 15).forEach(function(r){ %><tr><td class="first" data-l="Date"><%= dateRange(r.event_date, r.end_date) %></td>
       <td data-l="Event"><a class="rowlink" href="/events/<%= r.eid %>" style="text-decoration:underline;font-weight:900"><%= r.title %></a></td>
       <td data-l="Position"><%= r.position ? ordinal(r.position) : '—' %></td><td data-l="Gross"><%= r.gross ?? '—' %></td><td data-l="Net"><%= r.net ?? '—' %></td><td data-l="Stableford"><%= r.stableford ?? '—' %></td>
       <td data-l="Index"><%= r.idx_at_event!=null ? r.idx_at_event.toFixed(1) : '—' %></td><td data-l="OoM pts"><%= r.points %></td></tr><% }) %>

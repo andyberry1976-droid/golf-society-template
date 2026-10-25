@@ -21,7 +21,10 @@ const { seedBase } = require('./lib/baseline');
 
 function ensureAdmin(db, config) {
   const count = db.prepare('SELECT COUNT(*) n FROM users').get().n;
-  if (count === 0 && config.adminEmail) {
+  // also create the first admin when seed data (members without logins) was loaded but no admin can log in yet
+  const loginAdmins = db.prepare("SELECT COUNT(*) n FROM users WHERE role='admin' AND password_hash IS NOT NULL").get().n;
+  const emailTaken = config.adminEmail && db.prepare('SELECT 1 FROM users WHERE lower(email)=lower(?)').get(config.adminEmail);
+  if ((count === 0 || (loginAdmins === 0 && !emailTaken)) && config.adminEmail) {
     if (config.production && (config.adminPassword.length < 10 || config.adminPassword === config.demoPassword)) {
       throw new Error('ADMIN_PASSWORD must be set (min 10 chars, and not the demo password) to create the first admin in production.');
     }

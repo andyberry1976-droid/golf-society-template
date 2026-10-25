@@ -8,7 +8,7 @@
       <div><span class="chip <%= e.format_cls %>" style="margin:0"><%= e.format_label %></span><% if (e.status==='cancelled') { %> <span class="chip" style="background:#6b0027">Cancelled</span><% } %><% if (e.honour_name) { %> <span class="chip" style="background:var(--ink);color:var(--yl)">🏆 <%= e.honour_name %></span><% } %></div>
     </div>
     <h1><%= e.title %></h1>
-    <p class="lead"><%= dateLongY(e.event_date) %> · first tee <%= e.tee_time %><%= e.course_name ? ' · ' + e.course_name : '' %></p>
+    <p class="lead"><%= dateRangeLongY(e.event_date, e.end_date) %><%= multiDay(e.event_date, e.end_date) ? ' (' + dayCount(e.event_date, e.end_date) + ' days)' : '' %> · first tee <%= e.tee_time %><%= e.course_name ? ' · ' + e.course_name : '' %></p>
     <% if (isStaff) { %><p class="actions staff-bar" style="margin-top:14px;display:flex;flex-wrap:wrap;gap:8px"><a class="btn btn-pk" href="/admin/events/<%= e.id %>/edit#players">Manage players (add / remove)</a><a class="btn btn-wh" href="/admin/events/<%= e.id %>/edit">Edit event</a><a class="btn btn-yl" href="/admin/events/<%= e.id %>/results">Enter scores</a><% if (isAdmin) { %><a class="btn btn-wh" href="/admin/events/<%= e.id %>/scores.xlsx" download>Export players &amp; scores (Excel)</a><% } %><% if (isAdmin) { %><a class="btn btn-wh" href="/admin/scores/import?event=<%= e.id %>">Import players &amp; scores (Excel)</a><% } %></p><% } %>
   </div>
 </section>

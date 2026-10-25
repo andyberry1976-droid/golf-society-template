@@ -12,6 +12,7 @@ function migrate(db) {
   const add = (t, c, def) => { const have = cols(t); if (have.length && !have.includes(c)) db.exec(`ALTER TABLE ${t} ADD COLUMN ${c} ${def}`); };
   add('users', 'lowest_index', 'REAL'); add('users', 'achievements', 'TEXT'); add('users', 'subs_paid', 'INTEGER NOT NULL DEFAULT 0'); add('users', 'date_of_birth', 'TEXT'); add('team_events', 'src_hash', 'TEXT'); // 'MM-DD' or 'YYYY-MM-DD', admin-only year
   add('events', 'tournament_id', 'INTEGER'); add('events', 'round_no', 'INTEGER');
+  add('events', 'end_date', 'TEXT'); // multi-day events: last day (NULL = one-day event)
   add('events', 'counts_birdie', 'INTEGER NOT NULL DEFAULT 1'); add('events', 'counts_fedex', 'INTEGER NOT NULL DEFAULT 1');
   add('results', 'hcp_played', 'REAL'); add('courses', 'holes', 'TEXT'); // JSON [{par,si}] x18 for hole-by-hole scoring // historical: the handicap a player actually played off (imported seasons)
 }

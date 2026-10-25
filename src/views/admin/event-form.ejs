@@ -6,7 +6,11 @@
     <div class="fld"><label for="f-course_id">Course</label><select class="in" id="f-course_id" name="course_id"><option value="">To be confirmed</option><% courses.forEach(function(c){ %><option value="<%= c.id %>"<%= String(values.course_id)===String(c.id) ? ' selected' : '' %>><%= c.name %> (<%= c.tee %>, par <%= c.par %>)</option><% }) %></select><p class="hint">Need a new course? <a href="/admin/courses" style="text-decoration:underline">Add one</a> <%= hcpFixed ? '' : '(rating & slope drive handicaps)' %>.</p></div>
   </div>
   <div class="cols3">
-    <%- include('../partials/field', {name:'event_date', label:'Date', type:'date', values: values, errors: errors, attrs:'required'}) %>
+    <%- include('../partials/field', {name:'event_date', label:'Date (first day)', type:'date', values: values, errors: errors, attrs:'required'}) %>
+    <%- include('../partials/field', {name:'end_date', label:'End date (optional)', type:'date', values: values, errors: errors, hint:'Multi-day event? Pick the last day. Same as the first day = a one-day event.'}) %>
+    <%- include('../partials/field', {name:'days', label:'…or number of days', values: values, errors: errors, attrs:'inputmode="numeric" placeholder="1"', hint:'Used only when no end date is set (1–14).'}) %>
+  </div>
+  <div class="cols2">
     <%- include('../partials/field', {name:'tee_time', label:'First tee time', type:'time', values: values, errors: errors, attrs:'required'}) %>
     <div class="fld"><label for="f-status">Status</label><select class="in" id="f-status" name="status"><option value="scheduled"<%= (values.status||'scheduled')==='scheduled' ? ' selected' : '' %>>Scheduled</option><option value="cancelled"<%= values.status==='cancelled' ? ' selected' : '' %>>Cancelled</option><% if (ev && ev.status==='completed') { %><option value="completed" selected>Completed</option><% } %></select><% if (errors.status) { %><p class="ferr" role="alert"><%= errors.status %></p><% } %></div>
   </div>

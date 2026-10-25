@@ -46,11 +46,11 @@ function getEvent(db, id) {
 }
 
 function upcomingEvents(db, limit = 50) {
-  return db.prepare(EVENT_SELECT + " WHERE e.status IN ('scheduled','cancelled') AND e.event_date>=? ORDER BY e.event_date, e.tee_time LIMIT ?").all(today(), limit).map(decorate);
+  return db.prepare(EVENT_SELECT + " WHERE e.status IN ('scheduled','cancelled') AND COALESCE(e.end_date,e.event_date)>=? ORDER BY e.event_date, e.tee_time LIMIT ?").all(today(), limit).map(decorate);
 }
 
 function pastEvents(db, { seasonId = null, limit = 100 } = {}) {
-  return db.prepare(EVENT_SELECT + ` WHERE (e.status='completed' OR (e.status='scheduled' AND e.event_date<?))
+  return db.prepare(EVENT_SELECT + ` WHERE (e.status='completed' OR (e.status='scheduled' AND COALESCE(e.end_date,e.event_date)<?))
     AND (? IS NULL OR e.season_id=?) ORDER BY e.event_date DESC, e.id DESC LIMIT ?`).all(today(), seasonId, seasonId, limit).map(decorate);
 }
 

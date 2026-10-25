@@ -1,7 +1,7 @@
 <%- include('partials/head') %>
-<%- include('partials/pagehero', {eyebrow: autoApproved ? 'You’re in!' : 'Application sent', heading: autoApproved ? 'Welcome to the flock!' : 'Thanks, ' + name.split(' ')[0] + '!', lead: autoApproved ? 'Your invite code worked — your account is ready.' : 'An admin will review your application soon. Once approved you can log in with the password you chose.', doodle: 's-flam'}) %>
+<%- include('partials/pagehero', {eyebrow: autoApproved ? 'You’re in!' : 'Application sent', heading: autoApproved ? 'Welcome to the society!' : 'Thanks, ' + name.split(' ')[0] + '!', lead: autoApproved ? 'Your invite code worked — your account is ready.' : 'An admin will review your application soon. Once approved you can log in with the password you chose.', doodle: 's-flam'}) %>
 <div class="page-body"><div class="wrap lift" style="max-width:640px"><div class="card pad-lg">
-  <p style="font-weight:800"><%= autoApproved ? 'You can log in right now.' : 'No email is sent automatically — an admin or the captain will let you know. Pink socks optional.' %></p>
+  <p style="font-weight:800"><%= autoApproved ? 'You can log in right now.' : 'No email is sent automatically — an admin or the captain will let you know.' %></p>
   <p style="margin-top:18px"><a class="btn btn-pk" href="<%= autoApproved ? '/login' : '/' %>"><%= autoApproved ? 'Log in' : 'Back to the clubhouse' %></a></p>
 </div></div></div>
 <%- include('partials/foot') %>

@@ -21,7 +21,7 @@
   <div class="card" style="padding:8px 10px 12px">
   <table class="rt"><thead><tr><th>Date</th><th>Event</th><th>Course</th><th>Format</th><th>Played</th><th></th></tr></thead><tbody>
     <% past.forEach(function(e){ %><tr>
-      <td class="first" data-l="Date"><%= dateShort(e.event_date) %></td>
+      <td class="first" data-l="Date"><%= dateRange(e.event_date, e.end_date) %></td>
       <td data-l="Event"><a class="rowlink" href="/events/<%= e.id %>" style="font-weight:900;text-decoration:underline"><%= e.title %></a></td>
       <td data-l="Course"><%= e.course_name || '—' %></td>
       <td data-l="Format"><span class="chip <%= e.format_cls %>" style="margin:0"><%= e.format_label %></span></td>

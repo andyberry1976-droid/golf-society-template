@@ -3,7 +3,7 @@
   <svg class="doodle d1 bob" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-trophy"/></svg>
   <svg class="hero-art ha1 bob2" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-flag"/></svg>
   <svg class="hero-art ha2 spin" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-spark"/></svg>
-  <svg class="hero-art ha3 bob" viewBox="0 0 64 64" aria-hidden="true"><use href="#s-flam"/></svg>
+  <% if (typeof logoUrl !== "undefined" && logoUrl) { %><img class="hero-art ha3 bob" src="<%= logoUrl %>" alt="" aria-hidden="true"><% } else { %><svg class="hero-art ha3 bob" viewBox="0 0 64 64" aria-hidden="true"><use href="#s-flam"/></svg><% } %>
   <div class="wrap">
     <div>
       <% if (S.est_text) { %><span class="sticker"><svg class="ic" viewBox="0 0 48 48" aria-hidden="true"><use href="#s-star"/></svg> <%= S.est_text %></span><% } %>
@@ -22,7 +22,7 @@
       <p class="lab">Next tee-off</p>
       <% if (nextEvent) { %>
         <h2 id="cd-h"><%= nextEvent.title %></h2>
-        <p class="where"><%= dowShort(nextEvent.event_date) %> <%= dayNum(nextEvent.event_date) %> <%= monthShort(nextEvent.event_date) %> · <%= nextEvent.tee_time %><%= nextEvent.course_name ? ' · ' + nextEvent.course_name : '' %></p>
+        <p class="where"><% if (multiDay(nextEvent.event_date, nextEvent.end_date)) { %><%= dateRange(nextEvent.event_date, nextEvent.end_date) %><% } else { %><%= dowShort(nextEvent.event_date) %> <%= dayNum(nextEvent.event_date) %> <%= monthShort(nextEvent.event_date) %><% } %> · <%= nextEvent.tee_time %><%= nextEvent.course_name ? ' · ' + nextEvent.course_name : '' %></p>
         <div class="digits" role="timer" aria-label="Countdown to the next event" data-countdown="<%= nextEvent.event_date %>T<%= nextEvent.tee_time %>">
           <div class="dg"><b data-cd="d">00</b><span>Days</span></div>
           <div class="dg"><b data-cd="h">00</b><span>Hours</span></div>
@@ -46,7 +46,7 @@
 <% if (latest) { %>
 <div class="wrap latest" id="latest">
   <div class="lr" role="region" aria-labelledby="lr-h">
-    <div class="top"><h2 id="lr-h">Latest results</h2><p class="sub"><a href="/events/<%= latest.id %>" style="text-decoration:underline"><%= latest.title %></a><%= latest.course_name ? ' · ' + latest.course_name : '' %> · <%= dateLong(latest.event_date) %></p></div>
+    <div class="top"><h2 id="lr-h">Latest results</h2><p class="sub"><a href="/events/<%= latest.id %>" style="text-decoration:underline"><%= latest.title %></a><%= latest.course_name ? ' · ' + latest.course_name : '' %> · <%= dateRangeLong(latest.event_date, latest.end_date) %></p></div>
     <ol class="pod">
       <% podium.forEach(function(r){ const g = 'g' + Math.min(r.position,3); %>
       <li class="pl <%= g %>"><span class="medal" role="img" aria-label="<%= ordinal(r.position) %> place"><%= r.position %></span>

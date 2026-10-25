@@ -121,7 +121,8 @@ router.get('/birthdays', wrap((req, res) => {
   res.render('birthdays', { title: 'Birthdays', active: 'birthdays', today, todayLabel: B.dayMonth(today), people, upcoming: L.upcoming });
 }));
 
-router.get('/fantasy-league', (req, res) => {
+// the published price list (sites/<site>/fantasy-prices.json) for the next Fantasy League season
+function fantasyBase(req) {
   const FL = require('../lib/fantasy'); const fs = require('fs'); const path = require('path');
   const site = require('../site').load(); const file = site && site.dir && path.join(site.dir, 'fantasy-prices.json');
   const { R, places } = FL.rulesFrom(req.settings);
@@ -130,8 +131,54 @@ router.get('/fantasy-league', (req, res) => {
     const db = req.app.locals.db; const y = db.prepare("SELECT MAX(s.year) y FROM seasons s JOIN events e ON e.season_id=s.id WHERE e.status='completed'").get().y;
     prices = y ? FL.livePrices(db, y, { R, places }) : null;
   }
-  res.render('fantasy', { title: 'Fantasy League', active: 'fantasy', R, PP: places, prices });
-});
+  const season = (prices && prices.season) || (q.currentSeason(req.app.locals.db) || {}).year || new Date().getFullYear();
+  return { R, PP: places, prices, season };
+}
+function fantasyPage(req, res, extra = {}) {
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin');
+  const { R, PP, prices, season } = fantasyBase(req);
+  const added = db.prepare('SELECT COUNT(*) n FROM fantasy_pool WHERE season=?').get(season).n;
+  const shown = prices || added ? { season, basedOn: prices && prices.basedOn, players: FA.pool(db, season, prices) } : null;
+  const isAdmin = !!(req.user && req.user.role === 'admin');
+  res.render('fantasy', {
+    title: 'Fantasy League', active: 'fantasy', R, PP, prices: shown, teams: FA.teams(db, season), isAdmin,
+    fa: isAdmin ? { season, members: db.prepare("SELECT id, name FROM users WHERE status='active' ORDER BY name").all(), errors: {}, values: {}, form: null, ...extra } : null,
+  });
+}
+router.get('/fantasy-league', (req, res) => fantasyPage(req, res));
+
+// ---- Fantasy League admin: add golfers to the pool, enter teams on someone's behalf (admin only; CSRF checked app-wide) ----
+const faAdmin = [require('../lib/guards').adminOnly];
+const faDone = (req, res, r, okMsg, form) => {
+  if (!r.ok) { res.status(422); return fantasyPage(req, res, { errors: r.errors || {}, values: r.values || {}, form }); }
+  req.flash('ok', okMsg); res.redirect('/fantasy-league#fl-admin');
+};
+router.post('/fantasy-league/admin/players', faAdmin, wrap((req, res) => {
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { prices, season } = fantasyBase(req);
+  const r = FA.addPlayer(db, season, req.body, prices, req.user.id);
+  if (r.ok) q.audit(db, req.user.id, 'fantasy_add_player', `${season}: ${r.row.name} £${r.row.price}m`);
+  faDone(req, res, r, r.ok && `Added ${r.row.name} to the ${season} player pool at £${r.row.price.toFixed(1)}m.`, 'player');
+}));
+router.post('/fantasy-league/admin/players/:id(\\d+)/delete', faAdmin, wrap((req, res) => {
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { season } = fantasyBase(req);
+  const r = FA.removePlayer(db, season, Number(req.params.id));
+  if (!r.ok) { req.flash('err', r.error); return res.redirect('/fantasy-league#fl-admin'); }
+  q.audit(db, req.user.id, 'fantasy_remove_player', `${season}: ${r.row.name}`);
+  req.flash('ok', `Removed ${r.row.name} from the player pool.`); res.redirect('/fantasy-league#fl-admin');
+}));
+router.post('/fantasy-league/admin/teams', faAdmin, wrap((req, res) => {
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { R, prices, season } = fantasyBase(req);
+  const r = FA.addTeam(db, season, req.body, prices, R, req.user.id);
+  if (r.ok) q.audit(db, req.user.id, 'fantasy_add_team', `${season}: "${r.row.team_name}" (${r.row.manager_name}) ${r.row.picks.map((p) => p.name).join(', ')}; captain ${r.row.captain}; £${r.row.cost}m`);
+  faDone(req, res, r, r.ok && `Entered “${r.row.team_name}” for ${r.row.manager_name} (£${r.row.cost}m, captain ${r.row.captain}).`, 'team');
+}));
+router.post('/fantasy-league/admin/teams/:id(\\d+)/delete', faAdmin, wrap((req, res) => {
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { season } = fantasyBase(req);
+  const r = FA.removeTeam(db, season, Number(req.params.id));
+  if (!r.ok) { req.flash('err', r.error); return res.redirect('/fantasy-league#fl-admin'); }
+  q.audit(db, req.user.id, 'fantasy_remove_team', `${season}: "${r.row.team_name}" (${r.row.manager_name})`);
+  req.flash('ok', `Removed team “${r.row.team_name}”.`); res.redirect('/fantasy-league#fl-admin');
+}));
 
 router.get('/rules', wrap((req, res) => {
   const cfg = Soc.parseSocietyHcp(req.settings.society_hcp);

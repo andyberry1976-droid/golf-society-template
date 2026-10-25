@@ -3,10 +3,55 @@
 <div class="page-body"><div class="wrap lift stack">
   <% if (prices && prices.players.length) { %>
   <section class="card" aria-labelledby="fl-pr"><h2 id="fl-pr">Player prices for <%= prices.season %></h2>
-    <p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p>
+    <% if (prices.basedOn) { %><p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p><% } %>
     <table class="fl-prices"><thead><tr><th>Player</th><th class="r">Price</th></tr></thead><tbody>
     <% prices.players.forEach(function(p){ %><tr><td><% if (p.user_id) { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %></td><td class="r"><strong>£<%= p.price.toFixed(1) %>m</strong></td></tr><% }) %>
     </tbody></table></section>
+  <% } %>
+  <% if (teams && teams.length) { %>
+  <section class="card" aria-labelledby="fl-tm"><h2 id="fl-tm">Teams entered (<%= teams.length %>)</h2>
+    <div class="xs" tabindex="0" role="region" aria-label="Fantasy teams"><table class="rt"><thead><tr><th>Team</th><th>Manager</th><th>Squad</th><th class="r">Cost</th></tr></thead><tbody>
+    <% teams.forEach(function(t){ %><tr><td class="first" data-l="Team"><strong><%= t.team_name %></strong></td><td data-l="Manager"><%= t.manager_name %></td>
+      <td data-l="Squad"><%= t.picks.map(function(p){ return p.name + (p.name === t.captain ? ' (C)' : ''); }).join(', ') %></td><td class="r" data-l="Cost">£<%= t.cost.toFixed(1) %>m</td></tr><% }) %>
+    </tbody></table></div></section>
+  <% } %>
+  <% if (isAdmin && fa) { const pl = (prices && prices.players) || []; const er = fa.errors || {}; const vv = fa.values || {}; const pv = fa.form === 'player' ? vv : {}; const tv = fa.form === 'team' ? vv : {}; const tp = tv.picks || []; %>
+  <section class="card" id="fl-admin" aria-labelledby="fl-ad"><h2 id="fl-ad">Admin: add players <span class="badge">Admin only</span></h2>
+    <p class="hint" style="margin-top:6px">Only admins see this. Season <%= fa.season %> · squad of <%= R.squad %> · £<%= R.budget %>m budget · captain scores double · no free transfer.</p>
+    <form class="form" method="post" action="/fantasy-league/admin/players" novalidate style="margin-top:12px"><%- include('partials/csrf') %>
+      <h3>Add a golfer to the player pool</h3>
+      <div class="cols3">
+        <div class="fld"><label for="fa-p-user">Member</label><select class="in" id="fa-p-user" name="user_id"><option value="">— not a member / type a name —</option><% fa.members.forEach(function(m){ %><option value="<%= m.id %>"<%= String(pv.user_id)===String(m.id) ? ' selected' : '' %>><%= m.name %></option><% }) %></select><% if (fa.form==='player' && er.user_id) { %><p class="ferr" role="alert"><%= er.user_id %></p><% } %></div>
+        <div class="fld"><label for="fa-p-name">Name</label><input class="in" id="fa-p-name" name="name" maxlength="60" value="<%= pv.name || '' %>"><p class="hint">Blank = the member’s name.</p><% if (fa.form==='player' && er.name) { %><p class="ferr" role="alert"><%= er.name %></p><% } %></div>
+        <div class="fld"><label for="fa-p-price">Price (£m)</label><input class="in" id="fa-p-price" name="price" type="number" min="0.5" max="25" step="0.5" inputmode="decimal" value="<%= pv.price || '' %>"><% if (fa.form==='player' && er.price) { %><p class="ferr" role="alert"><%= er.price %></p><% } %></div>
+      </div>
+      <button class="btn btn-pk">Add to player pool</button>
+    </form>
+    <% const added = pl.filter(function(p){ return p.source === 'admin'; }); if (added.length) { %>
+    <p style="margin-top:12px;font-weight:700">Added by an admin:</p>
+    <ul class="people" style="margin-top:6px"><% added.forEach(function(p){ %><li style="display:flex;gap:8px;align-items:center"><span><%= p.name %> · £<%= p.price.toFixed(1) %>m</span>
+      <form method="post" action="/fantasy-league/admin/players/<%= p.id %>/delete" style="display:inline"><%- include('partials/csrf') %><button class="btn btn-wh btn-sm">Remove</button></form></li><% }) %></ul>
+    <% } %>
+    <form class="form" method="post" action="/fantasy-league/admin/teams" novalidate style="margin-top:18px"><%- include('partials/csrf') %>
+      <h3>Enter a team on someone’s behalf</h3>
+      <div class="cols3">
+        <div class="fld"><label for="fa-t-user">Member</label><select class="in" id="fa-t-user" name="user_id"><option value="">— not a member / type a name —</option><% fa.members.forEach(function(m){ %><option value="<%= m.id %>"<%= String(tv.user_id)===String(m.id) ? ' selected' : '' %>><%= m.name %></option><% }) %></select><% if (fa.form==='team' && er.user_id) { %><p class="ferr" role="alert"><%= er.user_id %></p><% } %></div>
+        <div class="fld"><label for="fa-t-mgr">Manager name</label><input class="in" id="fa-t-mgr" name="manager_name" maxlength="60" value="<%= tv.manager_name || '' %>"><p class="hint">Blank = the member’s name.</p><% if (fa.form==='team' && er.manager_name) { %><p class="ferr" role="alert"><%= er.manager_name %></p><% } %></div>
+        <div class="fld"><label for="fa-t-name">Team name</label><input class="in" id="fa-t-name" name="team_name" maxlength="40" value="<%= tv.team_name || '' %>"><% if (fa.form==='team' && er.team_name) { %><p class="ferr" role="alert"><%= er.team_name %></p><% } %></div>
+      </div>
+      <div class="cols3">
+        <% for (var i = 0; i < R.squad; i++) { %><div class="fld"><label for="fa-t-p<%= i %>">Pick <%= i + 1 %></label><select class="in" id="fa-t-p<%= i %>" name="picks"><option value="">—</option><% pl.forEach(function(p){ %><option value="<%= p.name %>"<%= tp[i]===p.name ? ' selected' : '' %>><%= p.name %> · £<%= p.price.toFixed(1) %>m</option><% }) %></select></div><% } %>
+        <div class="fld"><label for="fa-t-cap">Captain (scores double)</label><select class="in" id="fa-t-cap" name="captain"><option value="">—</option><% pl.forEach(function(p){ %><option value="<%= p.name %>"<%= tv.captain===p.name ? ' selected' : '' %>><%= p.name %></option><% }) %></select><% if (fa.form==='team' && er.captain) { %><p class="ferr" role="alert"><%= er.captain %></p><% } %></div>
+      </div>
+      <% if (fa.form==='team' && er.picks) { %><p class="ferr" role="alert"><%= er.picks %></p><% } %>
+      <p class="hint">Exactly <%= R.squad %> different players, total £<%= R.budget %>m or less. The captain must be one of the picks.</p>
+      <button class="btn btn-pk">Enter team</button>
+    </form>
+    <% if (teams && teams.length) { %>
+    <ul class="people" style="margin-top:12px"><% teams.forEach(function(t){ %><li style="display:flex;gap:8px;align-items:center"><span><%= t.team_name %> (<%= t.manager_name %>) · £<%= t.cost.toFixed(1) %>m</span>
+      <form method="post" action="/fantasy-league/admin/teams/<%= t.id %>/delete" style="display:inline"><%- include('partials/csrf') %><button class="btn btn-wh btn-sm">Remove team</button></form></li><% }) %></ul>
+    <% } %>
+  </section>
   <% } %>
   <section class="card" aria-labelledby="fl-h"><h2 id="fl-h">How it’ll work <span class="badge">Coming in 2027</span></h2>
     <ul class="rules">

@@ -102,7 +102,9 @@ function toSettings(c) {
 function themeCss(c) {
   const cols = (c && c.branding && c.branding.colors) || {};
   const decl = Object.entries(cols).filter(([k, v]) => COLOR_VARS[k] && HEX.test(v)).map(([k, v]) => `${COLOR_VARS[k]}:${v}`).join(';');
-  return decl ? `:root{${decl}}` : '';
+  let extra = '';
+  try { if (c && c.dir) { const f = path.join(c.dir, 'theme.css'); if (fs.existsSync(f)) extra = fs.readFileSync(f, 'utf8').replace(/<\/style/gi, ''); } } catch (_) { /* optional per-site stylesheet */ }
+  return (decl ? `:root{${decl}}` : '') + extra;
 }
 
 module.exports = { load, validate, toSettings, themeCss, dirFor, SITES_DIR, FEATURE_NAMES, COLOR_VARS, ConfigError };

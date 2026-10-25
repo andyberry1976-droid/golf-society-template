@@ -33,7 +33,7 @@ router.get('/', wrap((req, res) => {
   const db = req.app.locals.db;
   const season = Q.currentSeason(db);
   const c = (sql, ...a) => db.prepare(sql).get(...a).n;
-  const awaiting = db.prepare(Q.EVENT_SELECT + " WHERE e.status='scheduled' AND e.event_date<? ORDER BY e.event_date").all(Q.today()).map(Q.decorate);
+  const awaiting = db.prepare(Q.EVENT_SELECT + " WHERE e.status='scheduled' AND COALESCE(e.end_date,e.event_date)<? ORDER BY e.event_date").all(Q.today()).map(Q.decorate);
   render(res, 'dashboard', {
     title: 'Admin dashboard', adminTab: 'dashboard', season,
     tiles: {
@@ -319,7 +319,7 @@ router.get('/events/:id(\\d+)/edit', wrap((req, res) => {
   const db = req.app.locals.db;
   const ev = db.prepare('SELECT * FROM events WHERE id=?').get(Number(req.params.id));
   if (!ev) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such event.' });
-  render(res, 'event-form', { ...eventFormData(db, { ...ev, cost: ev.cost_pence ? (ev.cost_pence / 100).toFixed(2).replace(/\.00$/, '') : '', capacity: ev.capacity ?? '', honour_category_id: ev.honour_category_id || '' }, {}, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id) });
+  render(res, 'event-form', { ...eventFormData(db, { ...ev, end_date: ev.end_date || ev.event_date, cost: ev.cost_pence ? (ev.cost_pence / 100).toFixed(2).replace(/\.00$/, '') : '', capacity: ev.capacity ?? '', honour_category_id: ev.honour_category_id || '' }, {}, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id) });
 }));
 
 // ---- Event field: add / remove players (same staff permission as editing the event) ----------
@@ -367,6 +367,7 @@ function parseEventForm(req) {
     season_id: f.int('season_id', { min: 1, label: 'Season' }),
     course_id: f.int('course_id', { optional: true, min: 1, label: 'Course' }),
     event_date: f.date('event_date', { label: 'Date' }),
+    end_date: f.date('end_date', { label: 'End date', optional: true }),
     tee_time: f.time('tee_time', { label: 'First tee time' }),
     format: f.oneOf('format', FORMATS.map((x) => x.key), { label: 'Format' }),
     scoring_basis: f.oneOf('scoring_basis', BASES.map((x) => x.key), { label: 'Scoring basis' }),
@@ -384,6 +385,14 @@ function parseEventForm(req) {
   };
   if (v.season_id && !db.prepare('SELECT 1 FROM seasons WHERE id=?').get(v.season_id)) f.fail('season_id', 'Pick a season');
   if (v.course_id && !db.prepare('SELECT 1 FROM courses WHERE id=?').get(v.course_id)) f.fail('course_id', 'Pick a course');
+  // multi-day events: an end date or a number of days (blank / same day / 1 day = a one-day event, stored as NULL)
+  const days = f.int('days', { optional: true, min: 1, max: 14, label: 'Number of days' });
+  if (v.event_date && !v.end_date && days > 1) { const d = new Date(Date.parse(v.event_date + 'T12:00:00Z') + (days - 1) * 864e5); v.end_date = d.toISOString().slice(0, 10); }
+  if (v.event_date && v.end_date) {
+    if (v.end_date < v.event_date) f.fail('end_date', 'End date can’t be before the start date');
+    else if ((Date.parse(v.end_date) - Date.parse(v.event_date)) / 864e5 > 13) f.fail('end_date', 'An event can last at most 14 days');
+    if (v.end_date === v.event_date) v.end_date = null;
+  }
   return { f, v };
 }
 
@@ -392,8 +401,8 @@ router.post('/events', wrap((req, res) => {
   if (!req.body.status) req.body.status = 'scheduled';
   const { f, v } = parseEventForm(req);
   if (!f.ok) return render(res.status(422), 'event-form', eventFormData(db, f.values, f.errors));
-  const info = db.prepare(`INSERT INTO events(season_id,title,course_id,event_date,tee_time,format,scoring_basis,cost_pence,capacity,notes,status,counts_handicap,counts_oom,points_multiplier,allowance_pct,honour_category_id,counts_birdie,counts_fedex)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(v.season_id, v.title, v.course_id, v.event_date, v.tee_time, v.format, v.scoring_basis, Math.round((v.cost || 0) * 100), v.capacity, v.notes || null,
+  const info = db.prepare(`INSERT INTO events(season_id,title,course_id,event_date,end_date,tee_time,format,scoring_basis,cost_pence,capacity,notes,status,counts_handicap,counts_oom,points_multiplier,allowance_pct,honour_category_id,counts_birdie,counts_fedex)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(v.season_id, v.title, v.course_id, v.event_date, v.end_date || null, v.tee_time, v.format, v.scoring_basis, Math.round((v.cost || 0) * 100), v.capacity, v.notes || null,
     v.status === 'completed' ? 'scheduled' : v.status, v.counts_handicap, v.counts_oom, v.points_multiplier, v.allowance_pct, v.honour_category_id, v.counts_birdie, v.counts_fedex);
   Q.audit(db, req.user.id, 'create_event', `event ${info.lastInsertRowid}`);
   req.flash('ok', 'Event created. Members can RSVP now.');
@@ -408,8 +417,8 @@ router.post('/events/:id(\\d+)', wrap((req, res) => {
   if (f.ok && v.status === 'completed' && !db.prepare('SELECT 1 FROM results WHERE event_id=?').get(id)) f.fail('status', 'Enter results first — an event becomes completed when results are saved.');
   if (!f.ok) return render(res.status(422), 'event-form', { ...eventFormData(db, f.values, f.errors, ev), field: Field.list(db, ev.id), candidates: Field.candidates(db, ev.id) });
   db.transaction(() => {
-    db.prepare(`UPDATE events SET season_id=?,title=?,course_id=?,event_date=?,tee_time=?,format=?,scoring_basis=?,cost_pence=?,notes=?,status=?,counts_handicap=?,counts_oom=?,points_multiplier=?,allowance_pct=?,honour_category_id=?,counts_birdie=?,counts_fedex=? WHERE id=?`)
-      .run(v.season_id, v.title, v.course_id, v.event_date, v.tee_time, v.format, v.scoring_basis, Math.round((v.cost || 0) * 100), v.notes || null, v.status, v.counts_handicap, v.counts_oom, v.points_multiplier, v.allowance_pct, v.honour_category_id, v.counts_birdie, v.counts_fedex, id);
+    db.prepare(`UPDATE events SET season_id=?,title=?,course_id=?,event_date=?,end_date=?,tee_time=?,format=?,scoring_basis=?,cost_pence=?,notes=?,status=?,counts_handicap=?,counts_oom=?,points_multiplier=?,allowance_pct=?,honour_category_id=?,counts_birdie=?,counts_fedex=? WHERE id=?`)
+      .run(v.season_id, v.title, v.course_id, v.event_date, v.end_date || null, v.tee_time, v.format, v.scoring_basis, Math.round((v.cost || 0) * 100), v.notes || null, v.status, v.counts_handicap, v.counts_oom, v.points_multiplier, v.allowance_pct, v.honour_category_id, v.counts_birdie, v.counts_fedex, id);
     rsvpLib.setCapacity(db, id, v.capacity); // promotes from the waitlist if capacity grew
     recomputeAll(db);
   })();

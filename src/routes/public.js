@@ -109,7 +109,7 @@ router.get('/players/:id(\\d+)', wrap((req, res) => {
   const p = db.prepare("SELECT id,name,nickname,role,status,handicap_index,home_course,bio,joined_on,lowest_index,achievements FROM users WHERE id=? AND status='active'").get(Number(req.params.id));
   if (!p) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such player.' });
   const history = db.prepare('SELECT * FROM handicap_history WHERE user_id=? ORDER BY seq').all(p.id);
-  const results = db.prepare(`SELECT r.*, e.title, e.event_date, e.id AS eid, e.scoring_basis, e.format FROM results r JOIN events e ON e.id=r.event_id
+  const results = db.prepare(`SELECT r.*, e.title, e.event_date, e.end_date, e.id AS eid, e.scoring_basis, e.format FROM results r JOIN events e ON e.id=r.event_id
     WHERE r.user_id=? AND e.status='completed' ORDER BY e.event_date DESC, e.id DESC`).all(p.id);
   const lastWithDiff = db.prepare(`SELECT r.differential, e.title FROM results r JOIN events e ON e.id=r.event_id WHERE r.user_id=? AND r.differential IS NOT NULL ORDER BY e.event_date DESC LIMIT 20`).all(p.id);
   res.render('profile', {

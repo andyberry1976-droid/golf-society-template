@@ -10,7 +10,7 @@
       <% if (notices.length) { %><ul style="margin-top:12px;display:grid;gap:10px"><% notices.forEach(function(n){ %><li class="status-box<%= n.read_at ? '' : ' in' %>"><%= n.message %><% if (n.link) { %> <a href="<%= n.link %>" style="text-decoration:underline">View</a><% } %> <span class="muted sm"><%= n.created_at.slice(0,10) %></span></li><% }) %></ul>
       <% } else { %><p style="margin-top:8px;font-weight:700">Nothing new. We’ll tell you here if you’re bumped in from a waitlist.</p><% } %></section>
     <% if (F.on.rsvp) { %><section class="card" aria-labelledby="m-h"><h2 id="m-h">My upcoming events</h2>
-      <% if (mine.length) { %><ul class="people" style="margin-top:12px"><% mine.forEach(function(m){ %><li><a class="person" href="/events/<%= m.id %>"><span><%= m.title %><small><%= dateShort(m.event_date) %> · <%= m.tee_time %> · <%= m.status==='going' ? '✅ going' : '⏳ waitlist' %></small></span></a></li><% }) %></ul>
+      <% if (mine.length) { %><ul class="people" style="margin-top:12px"><% mine.forEach(function(m){ %><li><a class="person" href="/events/<%= m.id %>"><span><%= m.title %><small><%= dateRange(m.event_date, m.end_date) %> · <%= m.tee_time %> · <%= m.status==='going' ? '✅ going' : '⏳ waitlist' %></small></span></a></li><% }) %></ul>
       <% } else { %><p style="margin-top:8px;font-weight:700">You’re not down for anything yet. <a href="/events" style="text-decoration:underline">Browse events</a>.</p><% } %></section><% } %>
     <p><a class="btn-link" href="/players/<%= me.id %>">View my public profile →</a></p>
   </div>

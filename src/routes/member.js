@@ -47,8 +47,8 @@ router.get('/account', requireLogin, wrap((req, res) => {
   const me = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
   const notices = db.prepare('SELECT * FROM notices WHERE user_id=? ORDER BY id DESC LIMIT 20').all(me.id);
   db.prepare("UPDATE notices SET read_at=datetime('now') WHERE user_id=? AND read_at IS NULL").run(me.id);
-  const mine = db.prepare(`SELECT r.status, r.queue_seq, e.id, e.title, e.event_date, e.tee_time FROM rsvps r JOIN events e ON e.id=r.event_id
-    WHERE r.user_id=? AND e.status='scheduled' AND e.event_date>=? AND r.status!='not_going' ORDER BY e.event_date`).all(me.id, Q.today());
+  const mine = db.prepare(`SELECT r.status, r.queue_seq, e.id, e.title, e.event_date, e.end_date, e.tee_time FROM rsvps r JOIN events e ON e.id=r.event_id
+    WHERE r.user_id=? AND e.status='scheduled' AND COALESCE(e.end_date,e.event_date)>=? AND r.status!='not_going' ORDER BY e.event_date`).all(me.id, Q.today());
   const season = Q.currentSeason(db);
   const mySubs = req.features.on.subs && season ? { season, row: require('../lib/subs').get(db, season.id, me.id) } : null;
   res.render('account', { title: 'My account', active: 'account', me, notices, mine, mySubs, values: me, errors: {} });

@@ -6,7 +6,7 @@
 </section>
 <section class="card form"><h2>Society name &amp; branding</h2>
   <%- include('../partials/field', {name:'society_name', label:'Full society name', values: values, errors: errors, attrs:'required maxlength="80"'}) %>
-  <div class="cols2"><%- include('../partials/field', {name:'short_name', label:'Short name (header)', values: values, errors: errors, attrs:'required maxlength="30"'}) %><%- include('../partials/field', {name:'hero_title', label:'Home page headline (last word is pink)', values: values, errors: errors, attrs:'required maxlength="60"'}) %></div>
+  <div class="cols2"><%- include('../partials/field', {name:'short_name', label:'Short name (header)', values: values, errors: errors, attrs:'required maxlength="30"'}) %><%- include('../partials/field', {name:'hero_title', label:'Home page headline (last word is highlighted)', values: values, errors: errors, attrs:'required maxlength="60"'}) %></div>
   <div class="cols2"><%- include('../partials/field', {name:'hero_ribbon', label:'Ribbon under the headline', values: values, errors: errors}) %><%- include('../partials/field', {name:'est_text', label:'Sticker text', values: values, errors: errors}) %></div>
   <%- include('../partials/field', {name:'tagline', label:'Tagline', type:'textarea', values: values, errors: errors}) %>
   <%- include('../partials/field', {name:'join_blurb', label:'Join page blurb', type:'textarea', values: values, errors: errors}) %>
