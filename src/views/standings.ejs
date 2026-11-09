@@ -7,6 +7,7 @@
         <% seasons.forEach(function(s){ %><option value="<%= s.id %>"<%= season && season.id===s.id ? ' selected' : '' %>><%= s.name %><%= s.status==='closed' ? ' (closed)' : '' %></option><% }) %>
       </select></div><noscript><button class="btn btn-yl btn-sm">Go</button></noscript>
   </form>
+  <%- include('partials/comp-prize-box', { box: typeof prizeBox === 'undefined' ? null : prizeBox }) %>
   <div class="two">
     <div class="panel"><h3>Order of Merit</h3>
       <p class="sub"><%= season ? season.name : '' %> · <%= eventsCounted %> event<%= eventsCounted===1 ? '' : 's' %> counted<%= season && season.status==='closed' ? ' · final' : '' %></p>

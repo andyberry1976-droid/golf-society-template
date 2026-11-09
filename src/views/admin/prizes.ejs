@@ -21,4 +21,30 @@
     <button class="btn btn-wh btn-sm">Save</button>
   </form>
 </section>
+<section class="card" aria-labelledby="cpf-h" style="margin-top:22px"><h2 id="cpf-h">Competition prize fund <%= year %></h2>
+  <p class="hint" style="margin-top:6px">Season kitty shared across Order of Merit, Match Play, Birdie League and FedEx Cup. Shown on those pages. Separate from the event prizes above — nothing is paid out to players from this box until you say so.</p>
+  <form class="form" method="post" action="/admin/prizes/comp-fund" style="margin-top:12px"><%- include('../partials/csrf') %>
+    <input type="hidden" name="year" value="<%= year %>">
+    <% const f = fund || { paid_subs: null, kitty_pence: null, comps: {} }; const curSym = currency || '£';
+       const amt = (p) => p == null ? '' : (p % 100 ? (p/100).toFixed(2) : String(p/100));
+       const C = compPrizeMeta || []; %>
+    <div class="row" style="display:flex;flex-wrap:wrap;gap:14px">
+      <div class="fld" style="max-width:160px"><label for="cpf-subs">Paid subs</label><input class="in" id="cpf-subs" name="paid_subs" inputmode="numeric" value="<%= f.paid_subs == null ? '' : f.paid_subs %>" placeholder="e.g. 33"></div>
+      <div class="fld" style="max-width:180px"><label for="cpf-kitty">Kitty (<%= curSym %>)</label><input class="in" id="cpf-kitty" name="kitty" inputmode="decimal" value="<%= amt(f.kitty_pence) %>" placeholder="e.g. 660"></div>
+    </div>
+    <% C.forEach(function(c){ const comp = (f.comps && f.comps[c.key]) || { places: [] }; const by = {}; comp.places.forEach(function(p){ by[p.place] = p.amount_pence; }); %>
+      <fieldset style="margin-top:14px;border:3px solid var(--line);border-radius:12px;padding:12px 14px">
+        <legend style="font:400 20px/1 var(--f-d);padding:0 6px"><%= c.label %></legend>
+        <div class="row" style="display:flex;flex-wrap:wrap;gap:10px">
+          <div class="fld" style="max-width:140px"><label for="cpf-<%= c.key %>-w1">Winner</label><input class="in" id="cpf-<%= c.key %>-w1" name="<%= c.key %>_w1" inputmode="decimal" value="<%= amt(by[1]) %>"></div>
+          <div class="fld" style="max-width:140px"><label for="cpf-<%= c.key %>-w2">Runner-up</label><input class="in" id="cpf-<%= c.key %>-w2" name="<%= c.key %>_w2" inputmode="decimal" value="<%= amt(by[2]) %>"></div>
+          <div class="fld" style="max-width:140px"><label for="cpf-<%= c.key %>-w3">Third</label><input class="in" id="cpf-<%= c.key %>-w3" name="<%= c.key %>_w3" inputmode="decimal" value="<%= amt(by[3]) %>"></div>
+        </div>
+      </fieldset>
+    <% }) %>
+    <p style="margin-top:12px"><button class="btn btn-pk btn-sm" type="submit">Save competition fund</button>
+      <button class="btn btn-wh btn-sm" type="submit" name="clear" value="1">Clear <%= year %></button></p>
+  </form>
+</section>
+
 <%- include('_bot') %>

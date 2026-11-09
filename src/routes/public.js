@@ -6,6 +6,7 @@ const stats = require('../lib/stats');
 const { wrap } = require('../lib/guards');
 const rsvpLib = require('../lib/rsvp');
 const H = require('../lib/handicap');
+const CompPrizes = require('../lib/comp-prizes');
 
 const router = express.Router();
 
@@ -169,7 +170,8 @@ router.get('/standings', wrap((req, res) => {
   const grid = season ? omGrid(db, season.id, om.rows, scheme) : { events: [], rows: [] };
   const omHolder = season ? require('../lib/comps').holder(db, 'Order of Merit', season.year) : null;
   for (const r of om.rows) r.holder = !!omHolder && omHolder.id === r.user_id;
-  res.render('standings', { title: 'Order of Merit', active: 'standings', seasons: q.seasons(db), season, hl, om, scheme, eventsCounted, grid, omHolder, describe: P.describe });
+  const prizeBox = season ? CompPrizes.forComp(req.settings, season.year, 'oom') : null;
+  res.render('standings', { title: 'Order of Merit', active: 'standings', seasons: q.seasons(db), season, hl, om, scheme, eventsCounted, grid, omHolder, describe: P.describe, prizeBox });
 }));
 
 router.get('/records', wrap((req, res) => {

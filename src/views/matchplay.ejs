@@ -1,6 +1,7 @@
 <%- include('partials/head') %>
 <%- include('partials/pagehero', {eyebrow: 'Knockout', heading: b ? b.comp.name : 'Matchplay', lead: b && b.comp.notes ? b.comp.notes : 'Head-to-head knockout. Lose and you’re out.', doodle: 's-flag'}) %>
 <section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap stack">
+  <%- include('partials/comp-prize-box', { box: typeof prizeBox === 'undefined' ? null : prizeBox }) %>
 <% if (!b) { %><p class="empty">No matchplay competition yet.</p><% } else { %>
   <% if (all.length > 1) { %><form method="get" action="/matchplay" class="sortrow" style="max-width:360px"><div style="flex:1"><label for="comp" style="font-weight:900;display:block">Competition</label><select class="in" id="comp" name="comp" data-autosubmit><% all.forEach(function(c){ %><option value="<%= c.id %>"<%= c.id===b.comp.id ? ' selected' : '' %>><%= c.name %></option><% }) %></select></div></form><% } %>
   <div class="panel"><p class="sub" style="margin:0">

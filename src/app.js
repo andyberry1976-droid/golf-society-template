@@ -89,6 +89,7 @@ function createApp({ db, config }) {
       hcpFixed: !!(require('./rules').HANDICAP[S.handicap_mode] && require('./rules').HANDICAP[S.handicap_mode].manual),
       hcpLocked: !!(site.rules && site.rules.handicap && site.rules.handicap.locked),
       cur: S.currency || '£',
+      fmtMoney: (p) => require('./lib/prizes').fmtMoney(p, S.currency || '£'),
       path: req.path,
       title: null,
       active: '',

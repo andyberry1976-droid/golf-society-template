@@ -1,0 +1,11 @@
+<% if (typeof box !== 'undefined' && box && box.places && box.places.length) { %>
+<aside class="cpz" aria-label="Prize money <%= box.year %>">
+  <h3 class="cpz-h">Prize money <%= box.year %></h3>
+  <p class="cpz-sub"><%= box.label %><% if (box.total_pence) { %> · <strong><%= fmtMoney(box.total_pence) %></strong><% } %></p>
+  <ul class="cpz-list">
+    <% box.places.forEach(function(p){ %>
+      <li><span><%= p.label %></span><strong><%= fmtMoney(p.amount_pence) %></strong></li>
+    <% }) %>
+  </ul>
+</aside>
+<% } %>

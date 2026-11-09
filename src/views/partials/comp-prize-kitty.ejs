@@ -1,0 +1,20 @@
+<% if (typeof fund !== 'undefined' && fund && (fund.kitty_pence != null || fund.paid_subs != null)) { %>
+<section class="card cpz-kitty" aria-labelledby="cpz-kitty-h">
+  <h2 id="cpz-kitty-h">Competition prize fund <%= fund.year %></h2>
+  <p style="margin-top:8px;font-weight:700">
+    <% if (fund.paid_subs != null && fund.kitty_pence != null) { %>
+      <%= fund.paid_subs %> players paid subs · kitty <strong><%= fmtMoney(fund.kitty_pence) %></strong>
+    <% } else if (fund.kitty_pence != null) { %>
+      Season kitty <strong><%= fmtMoney(fund.kitty_pence) %></strong>
+    <% } else { %>
+      <%= fund.paid_subs %> players paid subs
+    <% } %>
+  </p>
+  <p class="hint" style="margin-top:6px">Shared across Order of Merit, Match Play, Birdie League and FedEx Cup. Winners are paid at the end of the season — this is the fund, not a running total of who has won.</p>
+  <ul class="cpz-list" style="margin-top:12px">
+    <% (compPrizeMeta || []).forEach(function(c){ const comp = fund.comps[c.key]; if (!comp || !comp.places.length) return; %>
+      <li><span><a href="<%= c.path %>"><%= c.label %></a></span><strong><%= fmtMoney(comp.total_pence || comp.places.reduce(function(s,p){return s+p.amount_pence;},0)) %></strong></li>
+    <% }) %>
+  </ul>
+</section>
+<% } %>

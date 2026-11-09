@@ -6,8 +6,8 @@
     "short_name": "Your Society",
     "hero_title": "Your Golf Society",
     "hero_ribbon": "Golf Society",
-    "est_text": "Monthly stableford · Order of Merit",
-    "tagline": "A friendly golf society. Edit this in sites/<slug>/site.config.json or Admin → Settings.",
+    "est_text": "Monthly stableford \u00b7 Order of Merit",
+    "tagline": "A friendly golf society. Edit this in sites/<slug>/site.config.json or Admin \u2192 Settings.",
     "footer_blurb": "Results, stats and banter from the society.",
     "join_blurb": "Fancy a game? Ask a member for the invite code.",
     "logo": null,
@@ -22,12 +22,13 @@
     }
   },
   "settings": {
-    "currency": "£",
+    "currency": "\u00a3",
     "prize_start_season": "",
     "contact_email": "",
     "invite_code": "CHANGEME",
     "invite_auto_approve": false,
-    "members_only": false
+    "members_only": false,
+    "comp_prize_fund": ""
   },
   "features": {
     "rsvp": true,

@@ -3,6 +3,7 @@
 const express = require('express');
 const q = require('../lib/queries');
 const PZ = require('../lib/prizes');
+const CompPrizes = require('../lib/comp-prizes');
 const { wrap, adminOnly } = require('../lib/guards');
 const { setSetting } = require('../db');
 
@@ -10,18 +11,44 @@ const router = express.Router();
 const cur = (req) => req.settings.currency || '£';
 const asArr = (v) => (v == null ? [] : Array.isArray(v) ? v : [v]);
 
+/** Years on the prize pages: event-prize seasons plus any year that has a competition fund configured. */
+function prizeYears(db, S) {
+  const set = new Set(PZ.years(db, S));
+  for (const y of Object.keys(CompPrizes.loadAll(S))) {
+    const n = Number(y);
+    if (Number.isInteger(n) && n >= 2000 && n <= 2100) set.add(n);
+  }
+  return [...set].sort((a, b) => b - a);
+}
+function pickPrizeYear(db, S, asked) {
+  const ys = prizeYears(db, S);
+  const n = Number(asked);
+  // Explicit year (incl. fund-only seasons like 2026 before event prizes start)
+  if (Number.isInteger(n) && ys.includes(n)) return n;
+  // Default: same as event-prize picker (prefer start season, not newest year)
+  return PZ.pickYear(db, S, asked);
+}
+
+
 router.get('/prize-money', wrap((req, res) => {
   const db = req.app.locals.db;
-  const year = PZ.pickYear(db, req.settings, req.query.year);
-  res.render('prize-money', { title: `Prize Money ${year}`, active: 'prizes', year, years: PZ.years(db, req.settings), P: PZ.season(db, year), money: (p) => PZ.fmtMoney(p, cur(req)) });
+  const year = pickPrizeYear(db, req.settings, req.query.year);
+  let fund = CompPrizes.forYear(req.settings, year);
+  // Landing page (no ?year): surface this calendar year's competition fund even when
+  // event prize_lines start in a later season (example: fund 2026, event prizes 2027+).
+  if (!fund && (req.query.year == null || req.query.year === '')) {
+    fund = CompPrizes.forYear(req.settings, PZ.thisYear());
+  }
+  res.render('prize-money', { title: `Prize Money ${year}`, active: 'prizes', year, years: prizeYears(db, req.settings), P: PZ.season(db, year), money: (p) => PZ.fmtMoney(p, cur(req)), fund, compPrizeMeta: CompPrizes.COMPS });
 }));
 
 // ---- admin ----
 const A = { adminLayout: true, active: 'admin', adminTab: 'prizes' };
 router.get('/admin/prizes', adminOnly, wrap((req, res) => {
   const db = req.app.locals.db;
-  const year = PZ.pickYear(db, req.settings, req.query.year);
-  res.render('admin/prizes', { ...A, title: 'Prize money', year, years: PZ.years(db, req.settings), events: PZ.seasonEvents(db, year), start: PZ.startSeason(req.settings), startSet: String(req.settings.prize_start_season || ''), money: (p) => PZ.fmtMoney(p, cur(req)), errors: {} });
+  const year = pickPrizeYear(db, req.settings, req.query.year);
+  const fund = CompPrizes.normalizeYear((CompPrizes.loadAll(req.settings) || {})[String(year)]);
+  res.render('admin/prizes', { ...A, title: 'Prize money', year, years: prizeYears(db, req.settings), events: PZ.seasonEvents(db, year), start: PZ.startSeason(req.settings), startSet: String(req.settings.prize_start_season || ''), money: (p) => PZ.fmtMoney(p, cur(req)), errors: {}, fund, currency: cur(req), compPrizeMeta: CompPrizes.COMPS });
 }));
 
 router.post('/admin/prizes/settings', adminOnly, wrap((req, res) => {
@@ -31,6 +58,25 @@ router.post('/admin/prizes/settings', adminOnly, wrap((req, res) => {
   q.audit(db, req.user.id, 'prize_settings', `first prize money season: ${v || 'this year'}`);
   req.flash('ok', `Prize money now starts with the ${PZ.startSeason({ prize_start_season: v })} season.`); res.redirect('/admin/prizes');
 }));
+
+router.post('/admin/prizes/comp-fund', adminOnly, wrap((req, res) => {
+  const db = req.app.locals.db;
+  const year = Number(req.body.year);
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) { req.flash('err', 'Pick a valid season year.'); return res.redirect('/admin/prizes'); }
+  if (req.body.clear) {
+    CompPrizes.saveYear(db, setSetting, req.settings, year, null);
+    q.audit(db, req.user.id, 'comp_prize_fund', `cleared ${year}`);
+    req.flash('ok', `Cleared the ${year} competition prize fund.`);
+    return res.redirect(`/admin/prizes?year=${year}`);
+  }
+  const parsed = CompPrizes.fromForm(req.body, cur(req));
+  if (!parsed.ok) { req.flash('err', Object.values(parsed.errors)[0]); return res.redirect(`/admin/prizes?year=${year}`); }
+  CompPrizes.saveYear(db, setSetting, req.settings, year, parsed.data);
+  q.audit(db, req.user.id, 'comp_prize_fund', `saved ${year}`);
+  req.flash('ok', `Saved the ${year} competition prize fund.`);
+  res.redirect(`/admin/prizes?year=${year}`);
+}));
+
 
 /** Prize entry lives on each event's admin pages (edit + results entry), in the "Prize money" section. */
 const BACK = { edit: 'edit', results: 'results' };

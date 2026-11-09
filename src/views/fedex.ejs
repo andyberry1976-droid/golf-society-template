@@ -2,6 +2,7 @@
 <%- include('partials/pagehero', {eyebrow: 'Season-long', heading: 'FedEx Cup', lead: 'The top 10 at every event score points: 1st 10, 2nd 9, 3rd 8 … 10th 1. Ties share the place.', doodle: 's-trophy'}) %>
 <section class="sec dark" style="margin-top:-40px;padding-top:60px"><div class="wrap stack">
   <%- include('partials/season-pick', {action: '/fedex'}) %>
+  <%- include('partials/comp-prize-box', { box: typeof prizeBox === 'undefined' ? null : prizeBox }) %>
   <div class="panel"><h3>Standings</h3><p class="sub"><%= season ? season.name : '' %><% if (t.holder) { %> · Holder: <a href="/players/<%= t.holder.id %>"><%= t.holder.name %></a><% } %></p>
     <%- include('partials/comp-table', {rows: t.rows, unit: 'Points'}) %></div>
   <div class="panel"><h3>Event by event</h3><p class="sub">Blank = didn’t play or nothing entered</p>

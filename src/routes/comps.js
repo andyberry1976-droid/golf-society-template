@@ -4,6 +4,7 @@ const express = require('express');
 const q = require('../lib/queries');
 const comps = require('../lib/comps');
 const Soc = require('../lib/society');
+const CompPrizes = require('../lib/comp-prizes');
 const { tournamentBoard } = require('../lib/engine');
 const { wrap } = require('../lib/guards');
 const fs = require('fs');
@@ -47,7 +48,8 @@ function compPage(comp, view, title) {
     const db = req.app.locals.db;
     const season = q.pickSeason(db, req.query.season);
     const t = season ? comps.compTable(db, comp, season.id) : { events: [], rows: [], holder: null };
-    res.render(view, { title, active: 'comps', seasons: q.seasons(db), season, t });
+    const prizeBox = season ? CompPrizes.forComp(req.settings, season.year, comp) : null;
+    res.render(view, { title, active: 'comps', seasons: q.seasons(db), season, t, prizeBox });
   });
 }
 router.get('/birdie-league', compPage('birdie', 'birdie', 'Birdie League'));
@@ -58,7 +60,12 @@ router.get('/matchplay', wrap((req, res) => {
   const all = db.prepare(MP_ORDER).all();
   const cur = q.currentSeason(db);
   const sel = all.find((c) => String(c.id) === String(req.query.comp)) || (cur && all.find((c) => c.season_id === cur.id)) || all[0];
-  res.render('matchplay', { title: 'Matchplay', active: 'comps', all, b: sel ? comps.bracket(db, sel.id) : null });
+  let prizeBox = null;
+  if (sel && sel.season_id) {
+    const sy = db.prepare('SELECT year FROM seasons WHERE id=?').get(sel.season_id);
+    if (sy) prizeBox = CompPrizes.forComp(req.settings, sy.year, 'matchplay');
+  }
+  res.render('matchplay', { title: 'Matchplay', active: 'comps', all, b: sel ? comps.bracket(db, sel.id) : null, prizeBox });
 }));
 
 router.get('/majors', wrap((req, res) => {
