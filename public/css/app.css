@@ -147,6 +147,7 @@ svg.ic{width:1em;height:1em;display:inline-block;vertical-align:-.12em}
 .ev dl{margin:16px 18px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px 10px}
 .ev dt{font-size:14px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
 .ev dd{font-weight:800;font-size:17px;line-height:1.25}
+.ev dd.notes,.kv dd.notes{white-space:pre-line}
 .ev dd.wide{grid-column:1/-1}
 .spaces{margin:16px 18px 0}
 .bar{height:14px;border-radius:99px;background:var(--line);border:2px solid var(--ink);overflow:hidden}

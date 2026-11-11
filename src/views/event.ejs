@@ -56,7 +56,7 @@
         <% if (!hcpFixed) { %><div><dt>Allowance</dt><dd><%= e.allowance_pct %>%</dd></div>
         <div><dt>Counts for handicap</dt><dd><%= e.counts_handicap ? 'Yes' : 'No' %></dd></div><% } %>
         <div><dt>Order of Merit</dt><dd><%= e.counts_oom ? (e.points_multiplier!==1 ? '×' + e.points_multiplier + ' points' : 'Counts') : 'Not counted' %></dd></div>
-        <% if (e.notes) { %><div class="wide"><dt>The small print</dt><dd style="font-weight:700"><%= e.notes %></dd></div><% } %>
+        <% if (e.notes) { %><div class="wide"><dt>The small print</dt><dd class="notes" style="font-weight:700"><%= e.notes %></dd></div><% } %>
         <% if (ch) { %><div class="wide"><dt>Your handicap here</dt><dd>Index <%= user.handicap_index.toFixed(1) %> → course handicap <b><%= ch.course %></b> → playing handicap <b><%= ch.playing %></b></dd></div><% } %>
       </dl>
     </section>

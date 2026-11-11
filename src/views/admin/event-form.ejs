@@ -24,7 +24,7 @@
     <%- include('../partials/field', {name:'capacity', label:'Places (capacity)', values: values, errors: errors, attrs:'inputmode="numeric"', hint:'Blank = unlimited. Extra sign-ups join a waitlist.'}) %>
     <% if (hcpFixed) { %><input type="hidden" name="allowance_pct" value="<%= values.allowance_pct || 100 %>"><% } else { %><%- include('../partials/field', {name:'allowance_pct', label:'Handicap allowance %', values: values, errors: errors, attrs:'inputmode="numeric"', hint:'95 = standard individual play'}) %><% } %>
   </div>
-  <%- include('../partials/field', {name:'notes', label:'Notes for players', type:'textarea', values: values, errors: errors, attrs:'maxlength="600"'}) %>
+  <%- include('../partials/field', {name:'notes', label:'Notes for players', type:'textarea', values: values, errors: errors, attrs:'maxlength="2000"'}) %>
   <fieldset><legend>Scoring &amp; trophies</legend>
     <div class="stack" style="--g:8px">
     <% if (hcpFixed) { %><% if (values.counts_handicap) { %><input type="hidden" name="counts_handicap" value="1"><% } %><% } else { %><label class="chk"><input type="checkbox" id="f-counts_handicap" name="counts_handicap" value="1"<%= values.counts_handicap ? ' checked' : '' %>> Counts for handicap (scores feed the WHS-style index)</label><% } %>

@@ -374,7 +374,7 @@ function parseEventForm(req) {
     scoring_basis: f.oneOf('scoring_basis', BASES.map((x) => x.key), { label: 'Scoring basis' }),
     cost: f.num('cost', { min: 0, max: 1000, optional: true, label: 'Cost' }),
     capacity: f.int('capacity', { min: 1, max: 500, optional: true, label: 'Capacity' }),
-    notes: f.str('notes', { max: 600 }),
+    notes: f.str('notes', { max: 2000 }),
     counts_handicap: f.bool('counts_handicap') ? 1 : 0,
     counts_oom: f.bool('counts_oom') ? 1 : 0,
     counts_birdie: f.bool('counts_birdie') ? 1 : 0,

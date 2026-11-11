@@ -250,7 +250,7 @@ function plan(db, { rows, present }, { createCourses = [] } = {}) {
     } else v.status = cur ? cur.status : 'scheduled';
     if (v.status === 'completed' && !(cur && db.prepare('SELECT 1 FROM results WHERE event_id=?').get(cur.id))) errors.push('Status "completed" needs results: enter them in the app (use scheduled)');
     // notes
-    if (has('notes')) { const n = String(raw.notes || '').trim(); if (n.length > 600) errors.push('Notes are longer than 600 characters'); else v.notes = n || null; } else v.notes = cur ? cur.notes : null;
+    if (has('notes')) { const n = String(raw.notes || '').trim(); if (n.length > 2000) errors.push('Notes are longer than 2000 characters'); else v.notes = n || null; } else v.notes = cur ? cur.notes : null;
 
     const row = { rowNo, id, title: v.title || title || '(no name)', values: v, errors, diffs: [] };
     if (errors.length) { row.kind = 'error'; out.push(row); continue; }
