@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { memDb, miniSociety, addEvent, startApp, Client } = require('./helpers');
+const { memDb, miniSociety, addEvent, addRelativeEvent, startApp, Client } = require('./helpers');
 const { setSetting, open } = require('../src/db');
 const Soc = require('../src/lib/society');
 const P = require('../src/lib/points');
@@ -127,35 +127,26 @@ test('matchplay bracket: round names, winners advance, byes', () => {
   assert.equal(b.champion, 'Player 2');
 });
 
-test('spreadsheet import: every total matches the sheet', () => {
+test('demo seed: members and handicaps, zero events; holders kept', () => {
   process.env.BCRYPT_ROUNDS = '4';
   const db = open(':memory:');
-  const { seedDemo, canon, CORRECTIONS } = require('../scripts/seed-demo-site');
+  const { seedDemo } = require('../scripts/seed-demo-site');
   const D = require('../sites/demo/seed/demo-data.json');
   const out = seedDemo(db);
-  assert.equal(out.people, 41);
-  const season = db.prepare("SELECT id FROM seasons WHERE name='2026'").get().id;
-  const cmp = (sheet, rows, corr = {}) => { const m = new Map(rows.map((r) => [r.name, r.total])); for (const r of sheet) { const c = corr[canon(r.name)]; assert.equal(m.get(canon(r.name)) ?? 0, c ? r.sheetTotal + c.delta : r.sheetTotal, r.name); } };
-  const om = standings.orderOfMerit(db, season);
-  cmp(D.oom, om, CORRECTIONS.oom);
-  const pos = (n) => om.findIndex((o) => o.name === n);
-  assert.ok(om.length > 30);
+  assert.equal(out.people, D.handicaps.length);
+  assert.equal(out.events, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM events').get().n, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM results').get().n, 0);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM users WHERE name LIKE '%Player 6%'").get().n, 1);
-  cmp(D.birdie, comps.compTable(db, 'birdie', season).rows);
-  cmp(D.fedex, comps.compTable(db, 'fedex', season).rows);
-  for (const k of ['major', 'euro']) cmp(D[k].results, tournamentBoard(db, db.prepare('SELECT id FROM tournaments WHERE kind=?').get(k).id).rows);
-  // handicaps loaded as on the sheet; playing handicap and category derived match too
   for (const h of D.handicaps) {
     const u = db.prepare('SELECT * FROM users WHERE name=?').get(h.name);
     assert.equal(u.handicap_index, h.actual, h.name);
     assert.equal(Soc.playingFromIndex(u.handicap_index), h.playing, h.name + ' playing');
     assert.equal(Soc.category(u.handicap_index), h.cat, h.name + ' category');
   }
-  // honours: Major + Euro winners from the leaderboards, holders imported
   const hon = db.prepare('SELECT c.name, u.name AS who, h.year FROM honours h JOIN honour_categories c ON c.id=h.category_id JOIN users u ON u.id=h.user_id').all();
-  assert.ok(hon.some((h) => h.name === 'Major' && h.who === 'Player 5' && h.year === 2026));
-  assert.ok(hon.some((h) => h.name === 'European Open' && h.who === 'Player 18'));
-  assert.equal(comps.bracket(db, 1).rounds[3].matches[0].p2_name, 'Player 8');
+  assert.ok(hon.some((h) => h.name === 'Order of Merit' && h.who === 'Player 23' && h.year === 2025));
+  assert.ok(hon.some((h) => h.name === 'Birdie League' && h.who === 'Player 1' && h.year === 2025));
   assert.equal(db.prepare("SELECT COUNT(*) n FROM users WHERE password_hash IS NOT NULL").get().n, 3);
 });
 
@@ -177,7 +168,7 @@ test('new pages render; members cannot reach the comp admin', async () => {
     const adm = new Client(app.base); await adm.login('admin@example.test', 'flamingo-demo-1');
     const page = await adm.get('/admin/members');
     assert.equal(page.status, 200); assert.match(page.text_, /Unpaid/);
-    const ev = db.prepare("SELECT id FROM events WHERE title LIKE 'January%'").get().id;
+    const ev = addRelativeEvent(db, { days: -14, title: 'January Stableford', status: 'completed' });
     const uid = db.prepare("SELECT id FROM users WHERE name='Player 1'").get().id;
     assert.equal((await adm.post(`/admin/comps/${ev}`, { [`birdies_${uid}`]: '2', [`eagles_${uid}`]: '1', [`fedex_${uid}`]: '7' })).status, 302);
     assert.equal(db.prepare("SELECT value FROM comp_scores WHERE comp='birdie' AND event_id=? AND user_id=?").get(ev, uid).value, 4);

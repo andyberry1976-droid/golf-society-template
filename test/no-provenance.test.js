@@ -11,5 +11,4 @@ test('public text carries no import/source notes (sheets, docs, placeholder date
   for (const [t, c] of [['events', 'notes'], ['users', 'bio'], ['tournaments', 'cut_note'], ['mp_comps', 'notes'], ['ryder_cups', 'notes'], ['honours', 'detail'], ['handicap_history', 'label']]) {
     for (const r of db.prepare(`SELECT ${c} v FROM ${t} WHERE ${c} IS NOT NULL`).all()) assert.doesNotMatch(r.v, bad, `${t}.${c}: ${r.v}`);
   }
-  assert.ok(db.prepare("SELECT 1 FROM events WHERE notes LIKE '%Does not count for the Order of Merit%'").get()); // member-facing notes kept
 });

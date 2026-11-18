@@ -2,9 +2,7 @@
 process.env.BCRYPT_ROUNDS = '4';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { open } = require('../src/db');
-const { seedDemo } = require('../scripts/seed-demo-site');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const O = require('../src/lib/odds');
 
 test('fractions: rounded down to the standard ladder', () => {
@@ -12,7 +10,7 @@ test('fractions: rounded down to the standard ladder', () => {
 });
 
 test('odds: next upcoming event only, favourite first, stable, react to scores, gone once results exist', async () => {
-  const db = open(':memory:'); seedDemo(db);
+  const { db } = seedDemoPlusEvents();
   const today = require('../src/lib/queries').today();
   const nx = O.nextEvent(db, today); assert.ok(nx);
   const a = O.compute(db, nx); const b = O.compute(db, nx);

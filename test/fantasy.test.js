@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('fs');
 const { open, setSetting } = require('../src/db');
 const { seedDemo } = require('../scripts/seed-demo-site');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 
 test('site configs: fantasy on for Demo, off for starter', () => {
   assert.equal(JSON.parse(fs.readFileSync('sites/demo/site.config.json')).features.fantasy, true);
@@ -13,7 +13,7 @@ test('site configs: fantasy on for Demo, off for starter', () => {
 });
 
 test('fantasy league teaser: page + menu link when on, 404 and no link when off', async () => {
-  const db = open(':memory:'); seedDemo(db); setSetting(db, 'feature_fantasy', '1');
+  const { db } = seedDemoPlusEvents(); setSetting(db, 'feature_fantasy', '1');
   const app = await startApp(db);
   try {
     const c = new Client(app.base);
@@ -32,7 +32,7 @@ test('fantasy scoring: place points, ties split, +3 for 36+, wooden spoon; price
   const F = require('../src/lib/fantasy');
   assert.equal(F.placePoints(1), 25); assert.equal(F.placePoints(10), 1); assert.equal(F.placePoints(11), 0);
   assert.equal(F.placePoints(2, 2), (18 + 15) / 2);
-  const { open } = require('../src/db'); const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db);
+  const { db } = seedDemoPlusEvents();
   const sim = F.simulate(db, 2026); assert.ok(sim.length > 5);
   const ev = db.prepare("SELECT e.id FROM events e JOIN seasons s ON s.id=e.season_id WHERE s.year=2026 AND e.status='completed' ORDER BY e.event_date LIMIT 1").get();
   const rows = db.prepare('SELECT user_id, position, stableford FROM results WHERE event_id=?').all(ev.id);
@@ -47,7 +47,7 @@ test('fantasy: rules configurable per society and prices generated from data whe
   const F = require('../src/lib/fantasy'); const { open } = require('../src/db');
   const { R, places } = F.rulesFrom({ fantasy_rules: JSON.stringify({ budget: 80, played: 1, places: [10, 5] }) });
   assert.equal(R.budget, 80); assert.equal(R.squad, 5); assert.deepEqual(places, [10, 5]);
-  const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db);
+  const { db } = seedDemoPlusEvents();
   const p = F.livePrices(db, 2026, { R, places }); assert.ok(p.players.length > 10);
   assert.ok(p.players.every((x) => x.price >= 3 && x.price <= 13)); assert.ok(p.players[0].price >= p.players.at(-1).price);
 });

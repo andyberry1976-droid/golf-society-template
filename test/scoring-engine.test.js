@@ -5,8 +5,7 @@ const assert = require('node:assert/strict');
 const E = require('../src/lib/scoring');
 const P = require('../src/lib/points');
 const { open, getSettings } = require('../src/db');
-const { seedDemo } = require('../scripts/seed-demo-site');
-const { miniSociety, startApp, Client } = require('./helpers');
+const { miniSociety, startApp, Client, addRelativeEvent, seedDemoPlusEvents } = require('./helpers');
 
 const holes = Array.from({ length: 18 }, (_, i) => ({ par: [4, 3, 5][i % 3], si: i + 1 }));
 const course = { par: 72, rating: 71, slope: 130, holes };
@@ -54,8 +53,15 @@ test('presets normalise to safe configs; league table honours chosen events and 
   assert.deepEqual(t.map((r) => [r.user, r.total]), [[2, 12], [1, 10]]);
 });
 
-test('GOLDEN: demo preset reproduces every stored Demo position and points (2025 + 2026)', () => {
-  const db = open(':memory:'); seedDemo(db, { with2025: true });
+test('GOLDEN: classic preset reproduces stored position and points', () => {
+  const { db, season, course, ids } = miniSociety([10, 15, 20, 25]);
+  const { saveResults } = require('../src/lib/results');
+  const { recomputeAll } = require('../src/lib/engine');
+  for (const [i, days] of [-28, -21, -14].entries()) {
+    const ev = addRelativeEvent(db, { season, course, days, title: 'Round ' + (i + 1), status: 'completed' });
+    saveResults(db, ev, ids.map((u, k) => ({ user_id: u, stableford: 40 - k - i })));
+  }
+  recomputeAll(db);
   const S = getSettings(db); const def = P.parseScheme(S.oom_default_scheme);
   const events = db.prepare("SELECT e.*, s.scheme AS season_scheme FROM events e JOIN seasons s ON s.id=e.season_id WHERE e.status!='cancelled'").all();
   let n = 0;
@@ -66,16 +72,12 @@ test('GOLDEN: demo preset reproduces every stored Demo position and points (2025
     const out = E.scoreEvent(rows.map((r) => ({ key: r.id, ph: r.playing_handicap, stableford: r.stableford, net: r.net, gross: r.gross != null ? r.gross : r.ags, position_in: r.position_in, bonus: r.bonus })), null, cfg, { multiplier: e.points_multiplier });
     for (const o of out) { const r = rows.find((x) => x.id === o.key); assert.equal(o.position, r.position, `event ${e.id} pos`); assert.equal(o.points, r.points, `event ${e.id} pts`); n++; }
   }
-  assert.ok(n > 100, `checked ${n} results`);
-  // derived stableford/net from totals match too wherever a gross was entered
-  for (const r of db.prepare('SELECT r.*, c.par FROM results r JOIN events e ON e.id=r.event_id JOIN courses c ON c.id=e.course_id WHERE r.gross IS NOT NULL AND r.hcp_played IS NULL').all()) {
-    assert.equal(E.scoreCard({ total: { gross: r.gross } }, { par: r.par }, r.playing_handicap).net, r.net);
-  }
+  assert.ok(n >= 12, `checked ${n} results`);
 });
 
 test('migrations are idempotent and leave existing data alone', () => {
   const p = require('path').join(require('os').tmpdir(), `eng-${process.pid}.db`);
-  const db = open(p); seedDemo(db, { with2025: false });
+  const db = open(p); require('../scripts/seed-demo-site').seedDemo(db); seedDemoPlusEvents({ db });
   const before = db.prepare('SELECT COUNT(*) n, SUM(points) p FROM results').get(); db.close();
   const db2 = open(p); const db3 = open(p);
   assert.deepEqual(db3.prepare('SELECT COUNT(*) n, SUM(points) p FROM results').get(), before);

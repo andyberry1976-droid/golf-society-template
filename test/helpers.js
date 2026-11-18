@@ -81,4 +81,67 @@ class Client {
   }
 }
 
-module.exports = { memDb, miniSociety, addEvent, startApp, Client, testConfig, recomputeAll };
+/** Calendar date n days from today (local), as YYYY-MM-DD. */
+function daysFromToday(n) {
+  const today = require('../src/lib/queries').today();
+  const [y, m, d] = today.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + n);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function ensureCourse(db) {
+  const row = db.prepare('SELECT id FROM courses LIMIT 1').get();
+  if (row) return row.id;
+  return db.prepare("INSERT INTO courses(name,tee,par,rating,slope) VALUES ('Test Links','Yellow',72,71.0,130)").run().lastInsertRowid;
+}
+
+function ensureSeason(db) {
+  const row = db.prepare('SELECT id FROM seasons ORDER BY year DESC LIMIT 1').get();
+  if (row) return row.id;
+  return db.prepare("INSERT INTO seasons(name,year,start_date,end_date,status) VALUES ('2026',2026,'2026-01-01','2026-12-31','open')").run().lastInsertRowid;
+}
+
+/** Insert an event dated n days from today (negative = past). Defaults status to completed when days < 0. */
+function addRelativeEvent(db, opts = {}) {
+  const days = opts.days ?? 0;
+  const rest = { ...opts };
+  delete rest.days;
+  return addEvent(db, {
+    season: rest.season || ensureSeason(db),
+    course: rest.course || ensureCourse(db),
+    title: rest.title || 'Event',
+    date: rest.date || daysFromToday(days),
+    status: rest.status ?? (days < 0 ? 'completed' : 'scheduled'),
+    ...rest,
+  });
+}
+
+/**
+ * Seed the demo society (members only) then add a few events dated relative to today:
+ * three completed rounds with scores / Birdie / FedEx, and one upcoming event with RSVPs.
+ */
+function seedDemoPlusEvents(extra = {}) {
+  const { open } = require('../src/db');
+  const { seedDemo } = require('../scripts/seed-demo-site');
+  const { saveResults } = require('../src/lib/results');
+  const rsvpLib = require('../src/lib/rsvp');
+  const db = extra.db || open(':memory:');
+  if (!extra.db) seedDemo(db);
+  const season = ensureSeason(db);
+  const course = ensureCourse(db);
+  const players = db.prepare("SELECT id FROM users WHERE status='active' ORDER BY id LIMIT 16").all().map((u) => u.id);
+  const pastIds = [];
+  for (const [i, days] of [-28, -21, -14].entries()) {
+    const ev = addRelativeEvent(db, { season, course, days, title: extra.pastTitle || `Monthly Stableford ${i + 1}`, status: 'completed' });
+    saveResults(db, ev, players.map((id, k) => ({ user_id: id, stableford: 40 - k - i })));
+    const cIns = db.prepare('INSERT INTO comp_scores(comp,event_id,user_id,value) VALUES (?,?,?,?)');
+    players.forEach((id, k) => { cIns.run('birdie', ev, id, (k + i) % 3); cIns.run('fedex', ev, id, Math.max(0, 10 - k - i)); });
+    pastIds.push(ev);
+  }
+  const upcoming = addRelativeEvent(db, { season, course, days: 14, title: extra.upcomingTitle || 'Spring Stableford', status: 'scheduled' });
+  players.slice(0, 6).forEach((id) => rsvpLib.setRsvp(db, upcoming, id, 'going'));
+  return { db, season, course, past: pastIds[pastIds.length - 1], pastIds, upcoming, players };
+}
+
+module.exports = { memDb, miniSociety, addEvent, addRelativeEvent, daysFromToday, ensureCourse, ensureSeason, seedDemoPlusEvents, startApp, Client, testConfig, recomputeAll };

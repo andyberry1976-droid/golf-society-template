@@ -5,10 +5,10 @@ const assert = require('node:assert/strict');
 const { open, setSetting } = require('../src/db');
 const users = require('../src/lib/users');
 const H = require('../src/lib/view-helpers');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 
 function site() {
-  const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db); setSetting(db, 'feature_fantasy', '1');
+  const { db } = seedDemoPlusEvents(); setSetting(db, 'feature_fantasy', '1');
   const mk = (name, email, role) => { const id = users.createUser(db, { name, email, passwordHash: users.hashPassword('password-123'), index: 18, joinedOn: '2025-01-01' }); db.prepare('UPDATE users SET role=? WHERE id=?').run(role, id); return id; };
   mk('Test Admin', 'fa-admin@t.example', 'admin'); mk('Test Captain', 'fa-cap@t.example', 'captain'); mk('Test Member', 'fa-mem@t.example', 'member');
   return db;

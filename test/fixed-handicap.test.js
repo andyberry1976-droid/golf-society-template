@@ -3,7 +3,7 @@ process.env.BCRYPT_ROUNDS = '4';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { open, getSettings, setSetting } = require('../src/db');
-const { startApp, Client, miniSociety, addEvent, recomputeAll } = require('./helpers');
+const { startApp, Client, miniSociety, addEvent, addRelativeEvent, seedDemoPlusEvents, recomputeAll } = require('./helpers');
 const { saveResults } = require('../src/lib/results');
 const { setHandicapMode } = require('../src/lib/hcp-mode');
 const D = require('../sites/demo/seed/demo-data.json');
@@ -59,23 +59,23 @@ test('Demo (golden): fixed mode keeps the sheet handicaps and history; results n
   require('../scripts/seed-demo-site').seedDemo(db);
   assert.equal(getSettings(db).handicap_mode, 'fixed');
   for (const h of D.handicaps) assert.equal(db.prepare('SELECT handicap_index h FROM users WHERE name=?').get(h.name).h, h.actual, h.name);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM handicap_history h JOIN users u ON u.id=h.user_id WHERE u.status='active'").get().n, 71); // 2026 members (2025-only members are inactive)
-  // a 45-point win at the next monthly (9+ players) would have cut under the old society maths; now nothing changes
-  const ev = db.prepare("SELECT id FROM events WHERE status='scheduled' ORDER BY event_date LIMIT 1").get().id;
+  const hist = () => db.prepare("SELECT COUNT(*) n FROM handicap_history h JOIN users u ON u.id=h.user_id WHERE u.status='active'").get().n;
+  const beforeHist = hist();
+  assert.ok(beforeHist > 0);
+  // a 45-point win (9+ players) would have cut under the old society maths; now nothing changes
+  const ev = addRelativeEvent(db, { days: 14, title: 'Next Monthly', status: 'scheduled' });
   const players = db.prepare("SELECT id FROM users ORDER BY id LIMIT 10").all().map((u) => u.id);
   const was = players.map((u) => idxOf(db, u));
   saveResults(db, ev, players.map((u, i) => ({ user_id: u, stableford: i ? 30 : 45 })));
   assert.deepEqual(players.map((u) => idxOf(db, u)), was);
-  assert.equal(db.prepare("SELECT COUNT(*) n FROM handicap_history h JOIN users u ON u.id=h.user_id WHERE u.status='active'").get().n, 71); // 2026 members (2025-only members are inactive)
+  assert.equal(hist(), beforeHist);
 });
 
 test('Demo UI: no slope/rating/WHS wording; admin sets a handicap -> history + audit', async () => {
-  const db = open(':memory:');
-  require('../scripts/seed-demo-site').seedDemo(db);
+  const { db, past: done } = seedDemoPlusEvents();
   const app = await startApp(db);
   try {
     const adm = new Client(app.base); await adm.login('admin@example.test', 'flamingo-demo-1');
-    const done = db.prepare("SELECT id FROM events WHERE status='completed' ORDER BY event_date LIMIT 1").get().id;
     const ben = db.prepare("SELECT id FROM users WHERE name='Player 1'").get().id;
     const pages = ['/admin/courses', `/events/${done}`, `/admin/events/${done}/results`, `/admin/events/${done}/edit`, '/admin/events/new', `/admin/members/${ben}`, '/admin/settings', `/players/${ben}`, '/rules'];
     for (const p of pages) {

@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const { open, getSettings, setSetting } = require('../src/db');
 const Fe = require('../src/lib/features');
 
@@ -14,14 +14,12 @@ test('SOCIETY_FEATURES parsing', () => {
 
 test('features: Demo seed has RSVPs off; toggling hides nav, 404s and restores', async () => {
   process.env.BCRYPT_ROUNDS = '4';
-  const db = open(':memory:');
-  require('../scripts/seed-demo-site').seedDemo(db);
+  const { db, upcoming: ev } = seedDemoPlusEvents();
   const S = getSettings(db);
   assert.equal(S.feature_rsvp, '0');
   for (const k of Fe.KEYS.filter((k) => k !== 'rsvp')) assert.equal(S[`feature_${k}`], '1', k);
   const app = await startApp(db);
   try {
-    const ev = db.prepare("SELECT id FROM events WHERE status='scheduled' ORDER BY event_date LIMIT 1").get().id;
     const anon = new Client(app.base);
     const adm = new Client(app.base); await adm.login('admin@example.test', 'flamingo-demo-1');
     // RSVP off: no buttons, counts or waitlist
@@ -58,7 +56,7 @@ test('features: Demo seed has RSVPs off; toggling hides nav, 404s and restores',
     // back on: everything restored
     setSetting(db, 'feature_awards', '1'); setSetting(db, 'feature_matchplay', '1');
     assert.equal((await anon.get('/awards')).status, 200);
-    const mp = await anon.get('/matchplay'); assert.equal(mp.status, 200); assert.match(mp.text_, /Player 1/);
+    const mp = await anon.get('/matchplay'); assert.equal(mp.status, 200); assert.match(mp.text_, /Matchplay/);
     assert.match((await anon.get('/')).text_, /href="\/matchplay"/);
     // RSVP back on: buttons return, data intact
     setSetting(db, 'feature_rsvp', '1');

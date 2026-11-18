@@ -2,13 +2,11 @@
 process.env.BCRYPT_ROUNDS = '4';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { open } = require('../src/db');
-const { seedDemo } = require('../scripts/seed-demo-site');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const SA = require('../src/lib/statawards');
 
 test('stats awards: computed from real scores, per season and all-time; update when a score is added', async () => {
-  const db = open(':memory:'); seedDemo(db);
+  const { db } = seedDemoPlusEvents();
   const sid = (y) => db.prepare('SELECT id FROM seasons WHERE year=?').get(y).id;
   const best = db.prepare(`SELECT MAX(r.stableford) m FROM results r JOIN events e ON e.id=r.event_id WHERE e.status='completed'`).get().m;
   const at = SA.allTime(db);

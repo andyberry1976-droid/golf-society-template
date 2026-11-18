@@ -24,7 +24,7 @@ honours, awards, birthdays, subs, Excel import/export, backups, and a **configur
 
 ```bash
 npm install          # needs Node ≥ 20 (better-sqlite3 v11 ships prebuilt binaries for Node 20/22)
-npm run seed         # creates data/society.db with the Demo 2026 season (41 members, 15 events…)
+npm run seed         # creates data/society.db with the Demo society (members and handicaps, no events)
                      # node scripts/seed.js --reset --demo   -> the fictional Flamingos demo instead
 npm start            # http://localhost:3000   (PORT=3100 npm start to change)
 ```
@@ -44,25 +44,14 @@ placeholder `…@members.invalid` email and **no password**, so they can't log i
 
 ## Spreadsheet import
 
-`scripts/demo-data.json` was generated from the society workbook (all 7 sheets) and `scripts/seed-demo-site.js`
-loads it. What goes where:
+The default Demo seed (`sites/demo/seed/`) loads members, handicaps and honour categories only — it does not
+create events or results. Add events in Admin, or import them with the generic importer (`src/seed/import.js`).
+A spreadsheet can be one `.xlsx` with sheets `Members`, `Courses`, `Events`, `Results`, `Honours`, or CSVs
+named `members.csv`, `events.csv`, … (first row = headers; common header names such as HCP/Index, Venue,
+Points are recognised).
 
-| Sheet | In the app |
-|---|---|
-| Order_of_Merit | 10 completed 2026 events (Jan–Sep, both Meadowfield Major days) with each player's stableford. 0 = didn't play (no result row). Order of Merit = best 7, 8th score (then 9th…) breaks ties, then most appearances. |
-| Birdie_League | Birdie League entries per event (already eagle-weighted). Blank = didn't play. |
-| Fedex_Cup | FedEx points per event as entered (the Meadowfield column is stored on Major round 2). |
-| Handicap_Records | Members, handicap at 1 Jan (starting handicap), current "actual" handicap (adjustment dated 1 Oct 2026), lowest ever, achievement codes. Playing handicap and category are derived and match the sheet for all 40. Subs column was empty, so everyone starts "Unpaid". Rules text + category table → Rules page and handicap settings. |
-| Match_Play | The 32-draw bracket (rounds, margins, byes, holder). |
-| 2026 Meadowfield Major | Tournament with two rounds (13 & 14 Jun), winner cut 2. |
-| 2026 Valley View Euro | Tournament with two rounds (10 & 11 Sep, Old Course / New Course), not counted in the OoM, "cut 1 for the following Euro only" (noted, not applied to the index). |
-
-Run `npm run verify-import` after seeding: it recomputes every total from the database and compares it to the
-sheet. Nicknames used in the Matchplay/Euro sheets are mapped in `ALIASES` at the top of `scripts/seed-demo-site.js`.
-Imported results have *counts for handicap* switched off so the sheet's current handicaps are kept as-is; new
-results adjust handicaps automatically.
-
-All 18 seeded members share that password. Demo invite code for the join form: `CHANGEME`.
+Demo invite code for the join form: `CHANGEME`. The three Demo logins (and, with `--demo`, all 18 Flamingos
+members) share the demo password above.
 Re-seed at any time with `npm run seed -- --reset` (wipes the database!).
 `npm run seed -- --blank` creates an empty society (baseline trophies, award types, current season) instead.
 

@@ -4,10 +4,10 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const ExcelJS = require('exceljs');
 const { open } = require('../src/db');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const SX = require('../src/lib/scores-xlsx');
 
-const seeded = () => { const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db); return db; };
+const seeded = () => seedDemoPlusEvents().db;
 const snap = (db) => JSON.stringify([db.prepare('SELECT event_id,user_id,gross,stableford,stableford_in,hcp_played,note FROM results ORDER BY event_id,user_id').all(), db.prepare('SELECT * FROM event_players ORDER BY event_id,user_id').all().map(({ created_at, added_at, ...r }) => r), db.prepare('SELECT comp,event_id,user_id,value FROM comp_scores ORDER BY 1,2,3').all()]);
 async function download(c, path) { const r = await fetch(c.base + path, { headers: { cookie: c._cookieHeader() } }); return { status: r.status, type: r.headers.get('content-type'), buf: Buffer.from(await r.arrayBuffer()) }; }
 async function upload(c, buf) {

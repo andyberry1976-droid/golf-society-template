@@ -4,11 +4,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const ExcelJS = require('exceljs');
 const { open } = require('../src/db');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const XL = require('../src/lib/events-xlsx');
 const { parse } = require('../src/lib/multipart');
 
-const seeded = () => { const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db); return db; };
+const seeded = () => seedDemoPlusEvents().db;
 const snapshot = (db) => JSON.stringify(db.prepare('SELECT * FROM events ORDER BY id').all().map(({ created_at, ...e }) => e));
 
 async function download(c, path) {
@@ -78,13 +78,16 @@ test('HTTP: export → edit + new row → preview → confirm; audited; omitted 
     assert.match((await cap.get('/admin/events')).text_, /Export to Excel/);
     const dl = await download(cap, `/admin/events/export.xlsx?season=${S26}`);
     assert.equal(dl.status, 200); assert.match(dl.type, /spreadsheetml/); assert.match(dl.disp, /events-2026\.xlsx/);
-    const nov = db.prepare("SELECT * FROM events WHERE title LIKE 'November Stableford%' AND season_id=?").get(S26);
+    const evRow = db.prepare("SELECT * FROM events WHERE title='Spring Stableford' AND season_id=?").get(S26);
+    const dmy = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    const addDays = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); const dt = new Date(y, m - 1, d); dt.setDate(dt.getDate() + n); return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`; };
+    const was = evRow.event_date; const next = addDays(was, 7);
     const total = db.prepare('SELECT COUNT(*) n FROM events').get().n;
     const before = snapshot(db);
     const buf = await edit(dl.buf, (ws, col) => {
-      let r = 2; while (ws.getRow(r).getCell(1).value !== nov.id) r++;
-      ws.getRow(r).getCell(col['Event name']).value = 'November Stableford — Clubhouse (moved)';
-      ws.getRow(r).getCell(col['Date (dd/mm/yyyy)']).value = '14/11/2026';
+      let r = 2; while (ws.getRow(r).getCell(1).value !== evRow.id) r++;
+      ws.getRow(r).getCell(col['Event name']).value = 'Spring Stableford (moved)';
+      ws.getRow(r).getCell(col['Date (dd/mm/yyyy)']).value = dmy(next);
       ws.getRow(r).getCell(col['FedEx Cup (Y/N)']).value = 'N';
       ws.spliceRows(2, 1); // a deleted row must not delete the event
       const n = ws.rowCount + 1;
@@ -98,19 +101,19 @@ test('HTTP: export → edit + new row → preview → confirm; audited; omitted 
     const up = await upload(cap, buf);
     assert.equal(up.status, 200);
     assert.match(up.text_, /1 new/); assert.match(up.text_, /1 changed/); assert.match(up.text_, /0 with errors/);
-    assert.match(up.text_, /Date:.*<del>07\/11\/2026<\/del> → <ins>14\/11\/2026<\/ins>/);
+    assert.match(up.text_, new RegExp(`Date:.*<del>${dmy(was)}</del> → <ins>${dmy(next)}</ins>`));
     assert.match(up.text_, /Create course “Brand New Golf Club”/);
     assert.equal(snapshot(db), before, 'nothing saved before confirm');
     const r = await cap.post('/admin/events/import/confirm', { token: tokenOf(up.text_), create_courses: 'Brand New Golf Club', action: 'apply' });
     assert.equal(r.status, 302);
-    const moved = db.prepare('SELECT * FROM events WHERE id=?').get(nov.id);
-    assert.equal(moved.event_date, '2026-11-14'); assert.equal(moved.counts_fedex, 0); assert.match(moved.title, /moved/);
+    const moved = db.prepare('SELECT * FROM events WHERE id=?').get(evRow.id);
+    assert.equal(moved.event_date, next); assert.equal(moved.counts_fedex, 0); assert.match(moved.title, /moved/);
     const xmas = db.prepare("SELECT e.*, c.name cn FROM events e JOIN courses c ON c.id=e.course_id WHERE title='Christmas Texas Scramble'").get();
     assert.equal(xmas.format, 'scramble'); assert.equal(xmas.scoring_basis, 'manual'); assert.equal(xmas.counts_oom, 0); assert.equal(xmas.cn, 'Brand New Golf Club'); assert.equal(xmas.season_id, S26);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM events').get().n, total + 1, 'omitted row kept');
     const audit = db.prepare("SELECT action, detail FROM audit_log WHERE action IN ('events_import','update_event','create_event','create_course') ORDER BY id").all();
     assert.ok(audit.some((a) => a.action === 'events_import' && /1 created, 1 updated/.test(a.detail)));
-    assert.ok(audit.some((a) => a.action === 'update_event' && /Date 07\/11\/2026 → 14\/11\/2026/.test(a.detail)));
+    assert.ok(audit.some((a) => a.action === 'update_event' && a.detail.includes(`Date ${dmy(was)} → ${dmy(next)}`)));
     assert.ok(audit.some((a) => a.action === 'create_course'));
     // the token is single-use
     assert.equal((await cap.post('/admin/events/import/confirm', { token: tokenOf(up.text_), action: 'apply' })).status, 302);

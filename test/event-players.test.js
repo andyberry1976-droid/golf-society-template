@@ -6,15 +6,13 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { open } = require('../src/db');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents, addRelativeEvent } = require('./helpers');
 const Field = require('../src/lib/field');
 const standings = require('../src/lib/standings');
 const comps = require('../src/lib/comps');
 
 function demo() {
-  const db = open(':memory:');
-  require('../scripts/seed-demo-site').seedDemo(db);
-  return db;
+  return seedDemoPlusEvents().db;
 }
 const season = (db) => db.prepare("SELECT id FROM seasons WHERE name='2026'").get().id;
 const uidOf = (db, name) => db.prepare('SELECT id FROM users WHERE name=?').get(name).id;
@@ -32,7 +30,7 @@ test('field: everyone already in an event is in its field (results, comp entries
 
 test('field: backfill runs once when an older database first gets event_players', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ep-')); const file = path.join(dir, 'old.db');
-  let db = open(file); require('../scripts/seed-demo-site').seedDemo(db);
+  let db = open(file); require('../scripts/seed-demo-site').seedDemo(db); seedDemoPlusEvents({ db });
   const want = db.prepare('SELECT COUNT(*) n FROM event_players').get().n;
   db.exec('DROP TABLE event_players'); db.close(); // simulate a database from before this change
   db = open(file);
@@ -111,7 +109,7 @@ test('HTTP: captain adds and removes players; confirm warns about scores; audite
 test('field with RSVPs off: adding players needs no RSVP; results then show for them', async () => {
   const db = demo();
   assert.equal(db.prepare("SELECT value FROM settings WHERE key='feature_rsvp'").get().value, '0');
-  const up = db.prepare("SELECT id FROM events WHERE status='scheduled' ORDER BY event_date DESC LIMIT 1").get().id;
+  const up = addRelativeEvent(db, { days: 21, title: 'Open Stableford', status: 'scheduled' });
   const ids = Field.candidates(db, up).slice(0, 3).map((c) => c.id);
   Field.add(db, up, ids, null);
   assert.equal(db.prepare('SELECT COUNT(*) n FROM rsvps WHERE event_id=?').get(up).n, 0);

@@ -6,7 +6,7 @@ const { open, setSetting } = require('../src/db');
 const users = require('../src/lib/users');
 const FL = require('../src/lib/fantasy');
 const FA = require('../src/lib/fantasy-admin');
-const { miniSociety, addEvent, startApp, Client } = require('./helpers');
+const { miniSociety, addEvent, startApp, Client, seedDemoPlusEvents } = require('./helpers');
 
 test('monthly fantasy points: place + playing + beat handicap + birdies + wooden spoon, captain double, multi-day counts in its start month', () => {
   const { db, season, course, ids } = miniSociety([10, 12, 14, 16, 18]);
@@ -37,7 +37,7 @@ test('monthly fantasy points: place + playing + beat handicap + birdies + wooden
 });
 
 function site() {
-  const db = open(':memory:'); require('../scripts/seed-demo-site').seedDemo(db); setSetting(db, 'feature_fantasy', '1');
+  const { db } = seedDemoPlusEvents(); setSetting(db, 'feature_fantasy', '1');
   const id = users.createUser(db, { name: 'Test Admin', email: 'fm-admin@t.example', passwordHash: users.hashPassword('password-123'), index: 18, joinedOn: '2025-01-01' });
   db.prepare("UPDATE users SET role='admin' WHERE id=?").run(id);
   return db;

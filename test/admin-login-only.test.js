@@ -3,7 +3,7 @@ process.env.BCRYPT_ROUNDS = '4';
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { open } = require('../src/db');
-const { startApp, Client } = require('./helpers');
+const { startApp, Client, seedDemoPlusEvents } = require('./helpers');
 const { seedDemo } = require('../scripts/seed-demo-site');
 
 test('admin-only sign-in (Demo): members/captains refused, no My account / Log in / Join, admin link in footer', async () => {
@@ -32,16 +32,15 @@ test('admin-only sign-in (Demo): members/captains refused, no My account / Log i
 });
 
 test('upcoming event page shows the Playing field publicly (RSVPs off); past events keep results', async () => {
-  const db = open(':memory:'); seedDemo(db, { with2025: false });
+  const { db, upcoming, past } = seedDemoPlusEvents();
   const app = await startApp(db, { adminLoginOnly: true });
   try {
-    const ev = db.prepare("SELECT id FROM events WHERE status='scheduled' ORDER BY event_date LIMIT 1").get().id;
+    const ev = upcoming;
     const n = require('../src/lib/field').list(db, ev).length;
     assert.ok(n > 0);
     const t = (await new Client(app.base).get('/events/' + ev)).text_;
     assert.match(t, new RegExp(`Playing <span class="badge dk">${n}</span>`));
     assert.match(t, /HCP \d/);
-    const past = db.prepare("SELECT id FROM events WHERE status='completed' LIMIT 1").get().id;
     const p = (await new Client(app.base).get('/events/' + past)).text_;
     assert.doesNotMatch(p, /id="go-h">Playing/); assert.match(p, /Results/);
   } finally { await app.close(); }
