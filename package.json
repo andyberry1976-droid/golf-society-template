@@ -19,7 +19,7 @@
     "new-society": "node scripts/setup-society.js",
     "screenshots": "node e2e/screenshots.mjs",
     "backup": "node scripts/backup.js",
-    "test:pg": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgres://postgres@127.0.0.1:54329/bogey_test} node --test test/pgstore.test.js",
+    "test:pg": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgres://postgres@127.0.0.1:54329/golf_test} node --test test/pgstore.test.js",
     "backup:pg": "bash scripts/pg-backup.sh",
     "scaffold-site": "node scripts/new-society.js"
   },
