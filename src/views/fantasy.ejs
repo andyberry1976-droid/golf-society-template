@@ -14,7 +14,7 @@
   <% } %>
   <% if (prices && prices.players.length) { %>
   <section class="card" aria-labelledby="fl-pr"><h2 id="fl-pr">Player prices for <%= prices.season %></h2>
-    <% if (prices.basedOn) { %><p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p><% } %>
+    <% if (prices.method) { %><p style="margin-top:8px;font-weight:700" id="fl-price-method"><%= prices.method %></p><% } else if (prices.basedOn) { %><p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p><% } %>
     <table class="fl-prices"><thead><tr><th>Player</th><th class="r">Price</th></tr></thead><tbody>
     <% prices.players.forEach(function(p){ %><tr><td><% if (p.user_id) { %><a href="/players/<%= p.user_id %>"><%= p.name %></a><% } else { %><%= p.name %><% } %></td><td class="r"><strong>£<%= p.price.toFixed(1) %>m</strong></td></tr><% }) %>
     </tbody></table></section>

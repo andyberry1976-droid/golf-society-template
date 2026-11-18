@@ -155,13 +155,13 @@ function fantasyBase(req) {
     prices = y ? FL.livePrices(db, y, { R, places }) : null;
   }
   const season = (prices && prices.season) || (q.currentSeason(req.app.locals.db) || {}).year || new Date().getFullYear();
-  return { R, PP: places, prices, season };
+  return { R: FL.rulesFor(prices, R), PP: places, prices, season };
 }
 function fantasyPage(req, res, extra = {}) {
   const db = req.app.locals.db; const FA = require('../lib/fantasy-admin');
   const { R, PP, prices, season } = fantasyBase(req);
   const added = db.prepare('SELECT COUNT(*) n FROM fantasy_pool WHERE season=?').get(season).n;
-  const shown = prices || added ? { season, basedOn: prices && prices.basedOn, players: FA.pool(db, season, prices) } : null;
+  const shown = prices || added ? { season, basedOn: prices && prices.basedOn, method: prices && prices.method, players: FA.pool(db, season, prices) } : null;
   const isAdmin = !!(req.user && req.user.role === 'admin');
   const teams = FA.teams(db, season);
   const myTeam = req.user && season === require('../lib/fantasy').MEMBER_TEAM_SEASON ? { team: teams.find((t) => t.user_id === req.user.id) || null } : null;

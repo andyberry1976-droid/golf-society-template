@@ -51,3 +51,10 @@ test('fantasy: rules configurable per society and prices generated from data whe
   const p = F.livePrices(db, 2026, { R, places }); assert.ok(p.players.length > 10);
   assert.ok(p.players.every((x) => x.price >= 3 && x.price <= 13)); assert.ok(p.players[0].price >= p.players.at(-1).price);
 });
+
+test('rulesFor: a price list may set its own budget; otherwise the society rules stand', () => {
+  const F = require('../src/lib/fantasy');
+  assert.equal(F.rulesFor(null), F.RULES); assert.equal(F.rulesFor({ budget: 'x' }), F.RULES); assert.equal(F.rulesFor({ budget: 0 }), F.RULES);
+  const own = { ...F.RULES, budget: 60 }; assert.equal(F.rulesFor({ players: [] }, own), own);
+  const r = F.rulesFor({ budget: 42.5 }, own); assert.equal(r.budget, 42.5); assert.equal(r.squad, own.squad); assert.equal(F.RULES.budget, 50, 'default unchanged');
+});

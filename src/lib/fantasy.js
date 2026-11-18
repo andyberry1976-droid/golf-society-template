@@ -41,6 +41,11 @@ function rulesFrom(settings = {}) {
   const places = Array.isArray(o.places) && o.places.length ? o.places.map((n) => +n || 0) : PLACE_POINTS;
   return { R, places, season: o.season || null };
 }
+/** A price list (fantasy-prices.json) may set its own `budget`; otherwise the given rules stand. */
+function rulesFor(prices, R = RULES) {
+  const b = prices && Number(prices.budget);
+  return Number.isFinite(b) && b > 0 ? { ...R, budget: b } : R;
+}
 /** Prices generated from the data: last completed season's simulated points, small samples pulled to the median. */
 function livePrices(db, year, { R = RULES, places = PLACE_POINTS, lo = 3, hi = 13 } = {}) {
   const sim = simulate(db, year, R, places); if (!sim.length) return null;
@@ -121,4 +126,4 @@ function monthly(db, season, teams, R = RULES, places = PLACE_POINTS) {
 }
 // Logged-in members may pick (and change) their own team only for this Fantasy League season.
 const MEMBER_TEAM_SEASON = 2027;
-module.exports = { MEMBER_TEAM_SEASON, PLACE_POINTS, RULES, placePoints, simulate, price, rulesFrom, livePrices, eventPoints, seasonMonths, monthly };
+module.exports = { MEMBER_TEAM_SEASON, PLACE_POINTS, RULES, placePoints, simulate, price, rulesFrom, rulesFor, livePrices, eventPoints, seasonMonths, monthly };
