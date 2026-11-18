@@ -73,8 +73,14 @@ function createApp({ db, config }) {
     req.settings = S;
     let user = null;
     if (req.session && req.session.userId) {
-      user = db.prepare('SELECT id,name,nickname,email,role,status,handicap_index FROM users WHERE id=?').get(req.session.userId);
-      if (!user || user.status !== 'active' || (adminLoginOnly && user.role !== 'admin')) { user = null; delete req.session.userId; }
+      user = db.prepare('SELECT id,name,nickname,email,username,role,status,handicap_index FROM users WHERE id=?').get(req.session.userId);
+      if (user && req.session.memberLogin) {
+        // signed in with an admin-issued username: always a plain member session (never captain/admin powers);
+        // ends as soon as the admin removes the username or disables the member
+        if (user.status !== 'active' || !user.username) user = null;
+        else user = { ...user, role: 'member', memberLogin: true };
+      } else if (user && (user.status !== 'active' || (adminLoginOnly && user.role !== 'admin'))) user = null;
+      if (!user) { delete req.session.userId; delete req.session.memberLogin; }
     }
     req.user = user;
     req.flash = (type, msg) => { req.session.flash = req.session.flash || []; req.session.flash.push({ type, msg }); };

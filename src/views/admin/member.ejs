@@ -20,8 +20,17 @@
   <div class="fld"><label class="chk" style="margin-top:28px"><input type="checkbox" name="subs_paid" value="1"<%= String(values.subs_paid)==='1' ? ' checked' : '' %>> Subs paid (£20) — admins only</label></div></div>
   <button class="btn btn-pk" type="submit">Save member</button>
 </form>
+<form class="card form" id="member-login" method="post" action="/admin/members/<%= m.id %>/login" novalidate autocomplete="off"><%- include('../partials/csrf') %>
+  <h2>Member login</h2>
+  <p class="hint" style="margin:0"><% if (m.username) { %>Login set up: username <b><%= m.username %></b>. They log in at <a class="btn-link" href="/login">/login</a> and can change their password once logged in.<% } else { %>No member login yet. Set a username and password, then give them to the member privately. They log in at <a class="btn-link" href="/login">/login</a> and can change their password once logged in.<% } %> A username login only ever gets member access<%= m.role !== 'member' ? ' (their ' + roleLabel(m.role).toLowerCase() + ' powers still need their email login)' : '' %>.</p>
+  <div class="cols2"><%- include('../partials/field', {name:'username', label:'Username', values: { username: m.username || '' }, errors: {}, autocomplete:'off', hint:'3–30 letters, numbers, dot, dash or underscore. Not case-sensitive.', attrs:'required minlength="3" maxlength="30" autocapitalize="none" spellcheck="false"'}) %>
+  <%- include('../partials/field', {name:'password', label: m.username ? 'New password (optional)' : 'Password', type:'password', values: {}, errors: {}, autocomplete:'new-password', hint: m.username ? 'Leave blank to keep their current password. Min 10 characters.' : 'Min 10 characters. Tell them privately.', attrs: (m.username ? '' : 'required ') + 'minlength="10" maxlength="200"'}) %></div>
+  <button class="btn btn-pk" type="submit"><%= m.username ? 'Save member login' : 'Set up member login' %></button>
+</form>
+<% if (m.username) { %><form method="post" action="/admin/members/<%= m.id %>/login/remove" data-confirm="Remove the member login for <%= m.name %>? They will no longer be able to log in with a username."><%- include('../partials/csrf') %><button class="btn btn-dn btn-sm" type="submit">Remove member login</button></form><% } %>
 <form class="card form" method="post" action="/admin/members/<%= m.id %>/password" novalidate><%- include('../partials/csrf') %>
   <h2>Reset password</h2>
+  <p class="hint" style="margin:0">For when they forget it. Works for their member login<%= m.username ? ' (' + m.username + ')' : '' %> and email login, and signs them out everywhere.</p>
   <%- include('../partials/field', {name:'password', label:'New temporary password', type:'password', values: {}, errors: {}, autocomplete:'new-password', hint:'Min 10 characters. Tell them privately.', attrs:'required minlength="10"'}) %>
   <button class="btn btn-wh" type="submit">Reset password</button>
 </form>

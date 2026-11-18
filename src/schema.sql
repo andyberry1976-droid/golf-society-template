@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY,
   email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  username TEXT, -- optional member login name set by an admin (unique, case-insensitive; NULL = no username login)
   password_hash TEXT,
   name TEXT NOT NULL,
   nickname TEXT,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   date_of_birth TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username COLLATE NOCASE);
 
 CREATE TABLE IF NOT EXISTS join_requests (
   id INTEGER PRIMARY KEY,

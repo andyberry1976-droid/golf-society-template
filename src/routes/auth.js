@@ -15,23 +15,27 @@ router.get('/login', (req, res) => {
 router.post('/login', (req, res, next) => req.app.locals.limiters.login(req, res, next), wrap((req, res) => {
   const db = req.app.locals.db;
   const f = form(req.body);
-  const email = f.str('email', { max: 254, label: 'Email' }).toLowerCase();
+  // one box takes an email (admin/captain/member email login) or a member username (admin-issued member login)
+  const ident = f.str('email', { max: 254, label: 'Email or username' }).toLowerCase();
   const pw = String(req.body.password || '').slice(0, 200);
   const nextUrl = safeNext(req.body.next, '/');
-  const u = email ? db.prepare('SELECT * FROM users WHERE email=?').get(email) : null;
-  const ok = users.checkPassword(pw, u ? u.password_hash : users.DUMMY_HASH) && u && u.status === 'active' && u.password_hash && (!req.app.locals.adminLoginOnly || u.role === 'admin');
+  const byUsername = !!ident && !ident.includes('@');
+  const u = !ident ? null : byUsername ? users.findByUsername(db, ident) : db.prepare('SELECT * FROM users WHERE email=?').get(ident);
+  const pwOk = users.checkPassword(pw, u ? u.password_hash : users.DUMMY_HASH);
+  // username logins are always plain member sessions (no captain/admin powers), and work even when sign-in is otherwise admin-only
+  const ok = pwOk && u && u.status === 'active' && u.password_hash && (byUsername ? !!u.username : (!req.app.locals.adminLoginOnly || u.role === 'admin'));
   if (!ok) {
-    const pending = !u && email && db.prepare("SELECT 1 FROM join_requests WHERE email=? AND status='pending'").get(email);
+    const pending = !u && ident && !byUsername && db.prepare("SELECT 1 FROM join_requests WHERE email=? AND status='pending'").get(ident);
     return res.status(401).render('login', {
-      title: 'Log in', active: 'login', values: { email }, errors: {}, next: nextUrl,
+      title: 'Log in', active: 'login', values: { email: ident }, errors: {}, next: nextUrl,
       error: pending ? 'Your join request is still waiting for approval. An admin will be in touch soon.' : 'Email or password not recognised.',
     });
   }
-  const keepCsrf = null; // new session = new CSRF token (prevents fixation)
-  req.session.regenerate((err) => {
+  req.session.regenerate((err) => { // new session = new CSRF token (prevents fixation)
     if (err) throw err;
     req.session.userId = u.id;
-    Q.audit(db, u.id, 'login', null);
+    if (byUsername) req.session.memberLogin = true;
+    Q.audit(db, u.id, byUsername ? 'member_login' : 'login', null);
     req.flash('ok', `Welcome back, ${u.nickname || u.name.split(' ')[0]}!`);
     res.redirect(nextUrl);
   });

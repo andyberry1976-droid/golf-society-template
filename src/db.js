@@ -15,6 +15,7 @@ function migrate(db) {
   add('events', 'end_date', 'TEXT'); // multi-day events: last day (NULL = one-day event)
   add('events', 'counts_birdie', 'INTEGER NOT NULL DEFAULT 1'); add('events', 'counts_fedex', 'INTEGER NOT NULL DEFAULT 1');
   add('ryder_cups', 'audio', 'TEXT'); add('ryder_cups', 'audio_label', 'TEXT'); // optional per-year voice clip
+  add('users', 'username', 'TEXT'); // member login name (admin-set); unique index (NOCASE) is created in schema.sql
   add('results', 'hcp_played', 'REAL'); add('courses', 'holes', 'TEXT'); // JSON [{par,si}] x18 for hole-by-hole scoring // historical: the handicap a player actually played off (imported seasons)
 }
 

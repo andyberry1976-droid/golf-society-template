@@ -43,4 +43,26 @@ function rejectRequest(db, requestId, adminId) {
   return info.changes > 0;
 }
 
-module.exports = { hashPassword, checkPassword, DUMMY_HASH, createUser, emailTaken, approveRequest, rejectRequest };
+// ---- Member logins (username + password set by an admin) ------------------------
+// Usernames are stored lower-case and matched case-insensitively (unique NOCASE index).
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+const normUsername = (s) => String(s == null ? '' : s).trim().toLowerCase();
+function usernameError(u) {
+  if (!u) return 'Enter a username';
+  if (!USERNAME_RE.test(u)) return 'Username must be 3–30 characters: letters, numbers, dot, dash or underscore (start with a letter or number)';
+  return null;
+}
+function usernameTaken(db, username, exceptId = null) {
+  return !!db.prepare('SELECT 1 FROM users WHERE username=? COLLATE NOCASE AND id IS NOT ?').get(normUsername(username), exceptId);
+}
+function findByUsername(db, username) {
+  const u = normUsername(username);
+  return u ? db.prepare('SELECT * FROM users WHERE username=? COLLATE NOCASE').get(u) || null : null;
+}
+/** Sign a user out everywhere (optionally keeping one session, e.g. the admin's own). */
+function endSessions(db, userId, keepSid = null) {
+  db.prepare('DELETE FROM sessions WHERE data LIKE ? AND sid IS NOT ?').run(`%"userId":${Number(userId)},%`, keepSid);
+  db.prepare('DELETE FROM sessions WHERE data LIKE ? AND sid IS NOT ?').run(`%"userId":${Number(userId)}}%`, keepSid);
+}
+
+module.exports = { hashPassword, checkPassword, DUMMY_HASH, createUser, emailTaken, approveRequest, rejectRequest, USERNAME_RE, normUsername, usernameError, usernameTaken, findByUsername, endSessions };

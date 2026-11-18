@@ -172,10 +172,49 @@ router.post('/members/:id(\\d+)/password', adminOnly, wrap((req, res) => {
   const f = form(req.body);
   const pw = f.password('password', { label: 'Temporary password' });
   if (!f.ok) { req.flash('err', Object.values(f.errors)[0]); return res.redirect('/admin/members/' + id); }
+  const m = db.prepare('SELECT id,username FROM users WHERE id=?').get(id);
+  if (!m) { req.flash('err', 'Member not found'); return res.redirect('/admin/members'); }
   db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(users.hashPassword(pw), id);
+  users.endSessions(db, id, req.sessionID); // signs them out everywhere (keeps the admin's own session)
   Q.audit(db, req.user.id, 'reset_password', `user ${id}`);
-  req.flash('ok', 'Password reset. Tell them privately and ask them to change it in My account.');
+  req.flash('ok', `Password reset. Tell them privately and ask them to change it${m.username ? ' (Change password, after logging in with their username)' : ' in My account'}.`);
   res.redirect('/admin/members/' + id);
+}));
+// Member login: an admin-issued username + password. Username logins are plain member sessions (never captain/admin powers).
+router.post('/members/:id(\\d+)/login', adminOnly, wrap((req, res) => {
+  const db = req.app.locals.db;
+  const id = Number(req.params.id);
+  const m = db.prepare('SELECT id,name,username,status FROM users WHERE id=?').get(id);
+  if (!m) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such member.' });
+  const f = form(req.body);
+  const username = users.normUsername(String(req.body.username || '').slice(0, 60));
+  const uErr = users.usernameError(username);
+  if (uErr) f.fail('username', uErr);
+  else if (users.usernameTaken(db, username, id)) f.fail('username', 'That username is already taken');
+  const rawPw = String(req.body.password || '');
+  const pw = !m.username || rawPw ? f.password('password', { label: 'Password' }) : ''; // first time: a password is required
+  if (!f.ok) { req.flash('err', Object.values(f.errors)[0]); return res.redirect('/admin/members/' + id + '#member-login'); }
+  db.transaction(() => {
+    db.prepare('UPDATE users SET username=? WHERE id=?').run(username, id);
+    if (pw) db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(users.hashPassword(pw), id);
+  })();
+  if (pw || username !== m.username) users.endSessions(db, id, req.sessionID);
+  Q.audit(db, req.user.id, m.username ? 'update_member_login' : 'set_member_login', `user ${id} username=${username}${pw ? ' (password set)' : ''}`);
+  req.flash('ok', `Member login ${m.username ? 'updated' : 'set up'} for ${m.name}: username “${username}”.${pw ? ' Give them the password privately; they can change it after logging in.' : ''}${m.status !== 'active' ? ' Note: this member is disabled, so they can’t log in until you make them active.' : ''}`);
+  res.redirect('/admin/members/' + id + '#member-login');
+}));
+router.post('/members/:id(\\d+)/login/remove', adminOnly, wrap((req, res) => {
+  const db = req.app.locals.db;
+  const id = Number(req.params.id);
+  const m = db.prepare('SELECT id,name,username FROM users WHERE id=?').get(id);
+  if (!m) return res.status(404).render('error', { title: 'Not found', code: 404, message: 'No such member.' });
+  if (m.username) {
+    db.prepare('UPDATE users SET username=NULL WHERE id=?').run(id);
+    users.endSessions(db, id, req.sessionID);
+    Q.audit(db, req.user.id, 'remove_member_login', `user ${id}`);
+  }
+  req.flash('ok', `Member login removed for ${m.name}. They can no longer log in with a username.`);
+  res.redirect('/admin/members/' + id + '#member-login');
 }));
 router.post('/members/:id(\\d+)/extra-round', adminOnly, wrap((req, res) => {
   const db = req.app.locals.db;

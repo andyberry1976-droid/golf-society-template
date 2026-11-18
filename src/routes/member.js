@@ -42,7 +42,11 @@ router.post('/events/:id(\\d+)/rsvp-admin', staff, wrap((req, res) => {
 }));
 
 // ---- Account -------------------------------------------------------------------
+// On an admin-only sign-in site, members signed in with their username only get the change-password page.
+const passwordOnly = (req) => !!(req.user && req.user.memberLogin && req.app.locals.adminLoginOnly);
+
 router.get('/account', requireLogin, wrap((req, res) => {
+  if (passwordOnly(req)) return res.redirect('/account/password');
   const db = req.app.locals.db;
   const me = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
   const notices = db.prepare('SELECT * FROM notices WHERE user_id=? ORDER BY id DESC LIMIT 20').all(me.id);
@@ -55,6 +59,7 @@ router.get('/account', requireLogin, wrap((req, res) => {
 }));
 
 router.post('/account', requireLogin, wrap((req, res) => {
+  if (passwordOnly(req)) return res.status(403).render('error', { title: 'Not allowed', code: 403, message: 'Ask an admin to change your details.' });
   const db = req.app.locals.db;
   const f = form(req.body);
   const name = f.str('name', { min: 2, max: 80, label: 'Name' });
@@ -70,21 +75,29 @@ router.post('/account', requireLogin, wrap((req, res) => {
   res.redirect('/account');
 }));
 
+router.get('/account/password', requireLogin, wrap((req, res) => {
+  const me = req.app.locals.db.prepare('SELECT id,name,username FROM users WHERE id=?').get(req.user.id);
+  res.render('password', { title: 'Change password', active: 'account', me, errors: {} });
+}));
+
 router.post('/account/password', requireLogin, wrap((req, res) => {
   const db = req.app.locals.db;
   const me = db.prepare('SELECT * FROM users WHERE id=?').get(req.user.id);
+  const page = req.body.via === 'page' || passwordOnly(req); // the stand-alone change-password page
   const f = form(req.body);
   const pw = f.password('new_password', { label: 'New password' });
-  if (!users.checkPassword(String(req.body.current_password || ''), me.password_hash)) f.fail('current_password', 'Current password is wrong');
+  if (!users.checkPassword(String(req.body.current_password || '').slice(0, 200), me.password_hash)) f.fail('current_password', 'Current password is wrong');
   if (pw && pw !== String(req.body.new_password2 || '')) f.fail('new_password2', 'The two passwords do not match');
+  if (f.ok && users.checkPassword(pw, me.password_hash)) f.fail('new_password', 'Choose a password different from your current one');
   if (!f.ok) {
+    if (page) return res.status(422).render('password', { title: 'Change password', active: 'account', me, errors: f.errors });
     return res.status(422).render('account', { title: 'My account', active: 'account', me, notices: [], mine: [], values: me, errors: f.errors, pwErrors: true });
   }
   db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(users.hashPassword(pw), me.id);
-  // sign out other sessions? (single-table store keeps it simple: rotate this one)
+  users.endSessions(db, me.id, req.sessionID); // signs out their other devices; this one stays signed in
   Q.audit(db, me.id, 'password_change', null);
   req.flash('ok', 'Password changed.');
-  res.redirect('/account');
+  res.redirect(page ? '/account/password' : '/account');
 }));
 
 module.exports = router;

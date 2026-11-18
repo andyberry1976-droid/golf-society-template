@@ -1,7 +1,7 @@
 <%- include('_top') %>
 <section class="card"><h2>All members <span class="badge dk"><%= members.length %></span></h2>
-<table class="rt" style="margin-top:8px"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Index</th><th>Rounds</th><th>Subs</th><th>Status</th><th></th></tr></thead><tbody>
-<% members.forEach(function(m){ %><tr><td class="first" data-l="Name"><b><%= m.name %></b></td><td data-l="Email"><%= m.email %></td>
+<table class="rt" style="margin-top:8px"><thead><tr><th>Name</th><th>Email</th><th>Login</th><th>Role</th><th>Index</th><th>Rounds</th><th>Subs</th><th>Status</th><th></th></tr></thead><tbody>
+<% members.forEach(function(m){ %><tr><td class="first" data-l="Name"><b><%= m.name %></b></td><td data-l="Email"><%= m.email %></td><td data-l="Login"><% if (m.username) { %><span class="badge ok"><%= m.username %></span><% } else { %><span class="muted">—</span><% } %></td>
 <td data-l="Role"><span class="badge <%= m.role %>"><%= roleLabel(m.role) %></span></td><td data-l="Index"><%= fmtIdx(m.handicap_index) %></td><td data-l="Rounds"><%= m.rounds %></td><td data-l="Subs"><span class="badge <%= m.subs_paid ? 'ok' : 'bad' %>"><%= m.subs_paid ? 'Paid' : 'Unpaid' %></span></td>
 <td data-l="Status"><span class="badge <%= m.status==='active' ? 'ok' : 'bad' %>"><%= m.status %></span></td><td class="r"><a class="btn btn-wh btn-sm" href="/admin/members/<%= m.id %>">Manage<span class="sr"> <%= m.name %></span></a></td></tr><% }) %>
 </tbody></table></section>

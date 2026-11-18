@@ -1,10 +1,10 @@
 <%- include('partials/head') %>
-<%- include('partials/pagehero', {eyebrow: 'Members', heading: 'Log in', lead: 'Welcome back.', doodle: 's-flag'}) %>
+<%- include('partials/pagehero', {eyebrow: 'Members', heading: 'Log in', lead: adminLoginOnly ? 'Members: use the username and password the admin gave you.' : 'Welcome back.', doodle: 's-flag'}) %>
 <div class="page-body"><div class="wrap lift" style="max-width:560px">
   <form class="card form pad-lg" method="post" action="/login" novalidate>
     <%- include('partials/csrf') %><input type="hidden" name="next" value="<%= next %>">
     <% if (typeof error !== 'undefined' && error) { %><p class="flash err" role="alert" style="margin:0"><%= error %></p><% } %>
-    <%- include('partials/field', {name:'email', label:'Email', type:'email', values: values, errors: errors, autocomplete:'username', attrs:'required autofocus inputmode="email"'}) %>
+    <%- include('partials/field', {name:'email', label: adminLoginOnly ? 'Username (admins: email)' : 'Email or username', type:'text', values: values, errors: errors, autocomplete:'username', attrs:'required autofocus autocapitalize="none" spellcheck="false" maxlength="254"'}) %>
     <%- include('partials/field', {name:'password', label:'Password', type:'password', values: {}, errors: {}, autocomplete:'current-password', attrs:'required'}) %>
     <button class="btn btn-pk btn-full" type="submit">Log in</button>
     <p class="fine" style="margin:0">Forgotten your password? Ask an admin to reset it. <% if (F.on.join) { %>Not a member yet? <a href="/join" style="text-decoration:underline">Apply to join</a>.<% } %></p>

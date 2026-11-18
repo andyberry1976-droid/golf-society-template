@@ -51,7 +51,7 @@
       <% if (isStaff) { %><a href="/admin"<%- active==='admin' ? ' aria-current="page"' : '' %>>Admin<% if (pendingCount) { %><span class="nbadge" aria-label="<%= pendingCount %> join requests waiting"><%= pendingCount %></span><% } %></a><% } %>
     </nav>
     <div class="hd-r">
-      <% if (adminLoginOnly) { %><% if (user) { %><form method="post" action="/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="btn btn-wh btn-sm login-btn">Log out</button></form><% } %>
+      <% if (adminLoginOnly) { %><% if (user) { %><% if (user.memberLogin) { %><a class="btn btn-yl btn-sm login-btn" href="/account/password"<%- reqPath==='/account/password' ? ' aria-current="page"' : '' %>>Change password</a> <% } %><form method="post" action="/logout" style="display:inline"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="btn btn-wh btn-sm login-btn">Log out</button></form><% } else { %><a class="btn btn-wh btn-sm login-btn" href="/login">Member login</a><% } %>
       <% } else if (user) { %>
         <a class="btn btn-yl btn-sm login-btn" href="/account"<%- active==='account' ? ' aria-current="page"' : '' %>>My account<% if (unread) { %><span class="nbadge" aria-label="<%= unread %> new notices"><%= unread %></span><% } %></a>
       <% } else { %>
@@ -71,7 +71,7 @@
       <div id="m-honours"><% HON.forEach(function(n){ %><a href="<%= n[0] %>"<%- curPath===n[0] ? ' aria-current="page"' : '' %>><%- n[1] %></a><% }) %></div></details><% } %>
     <% TOP_B.forEach(function(n){ %><a href="<%= n[2] %>"<%- active===n[0] ? ' aria-current="page"' : '' %>><%= n[1] %></a><% }) %>
     <% if (isStaff) { %><a href="/admin">Admin<% if (pendingCount) { %> (<%= pendingCount %> new)<% } %></a><% } %>
-    <% if (adminLoginOnly) { %><% if (user) { %><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form><% } %>
+    <% if (adminLoginOnly) { %><% if (user) { %><% if (user.memberLogin) { %><a href="/account/password">Change password</a><% } %><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form><% } else { %><a href="/login">Member login</a><% } %>
     <% } else if (user) { %>
       <a href="/account">My account<% if (unread) { %> (<%= unread %> new)<% } %></a>
       <form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf() %>"><button type="submit" class="lnk">Log out</button></form>
