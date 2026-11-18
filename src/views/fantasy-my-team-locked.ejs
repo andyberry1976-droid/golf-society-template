@@ -1,0 +1,13 @@
+<%- include('partials/head') %>
+<%- include('partials/pagehero', {eyebrow: 'Fantasy League ' + season, heading: 'Teams locked', lead: 'The season is under way, so teams can’t be picked or changed any more.', doodle: 's-flag'}) %>
+<div class="page-body"><div class="wrap lift stack">
+  <section class="card" id="fl-locked" aria-labelledby="fl-locked-h">
+    <h2 id="fl-locked-h">Teams locked</h2>
+    <p style="margin-top:8px;font-weight:700">Teams locked at <%= lock.text %> (UK time), the first tee time of the season<%= lock.event ? ': ' + lock.event.title : '' %>.</p>
+    <% if (team) { %><p style="margin-top:10px"><strong><%= team.team_name %></strong> · £<%= team.cost.toFixed(1) %>m</p>
+      <p style="margin-top:6px"><%= team.picks.map(function(p){ return p.name + (p.name === team.captain ? ' (C)' : ''); }).join(', ') %></p>
+    <% } else { %><p class="hint" style="margin-top:8px">You didn’t pick a team before the lock. If you think you should be in, have a word with an admin.</p><% } %>
+    <p style="margin-top:14px"><a class="btn btn-yl" href="/fantasy-league">Back to the Fantasy League</a></p>
+  </section>
+</div></div>
+<%- include('partials/foot') %>

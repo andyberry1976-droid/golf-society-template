@@ -8,8 +8,11 @@
   <section class="card" aria-labelledby="fl-my-team" id="fl-my-team-card"><h2 id="fl-my-team">My team</h2>
     <% if (mt) { %><p style="margin-top:8px;font-weight:700"><strong><%= mt.team_name %></strong> · £<%= mt.cost.toFixed(1) %>m</p>
       <p style="margin-top:6px"><%= mt.picks.map(function(p){ return p.name + (p.name === mt.captain ? ' (C)' : ''); }).join(', ') %></p><% } %>
-    <p style="margin-top:12px"><a class="btn btn-pk" href="/fantasy-league/my-team" id="fl-my-team-btn"><%= mt ? 'Change my team' : 'Pick my team' %></a></p>
+    <% const lk = myTeam.lock || {}; if (lk.locked) { %><p class="hint" id="fl-my-team-locked" style="margin-top:10px;font-weight:700">Teams locked<%= lk.text ? ' at ' + lk.text + ' (UK time)' : '' %>. <%= mt ? 'Your team is set for the season.' : 'You didn’t pick a team before the lock.' %></p>
+    <% } else { %><p style="margin-top:12px"><a class="btn btn-pk" href="/fantasy-league/my-team" id="fl-my-team-btn"><%= mt ? 'Change my team' : 'Pick my team' %></a></p>
     <p class="hint"><%= mt ? 'Only you (and the admin) can change your team.' : 'Pick ' + R.squad + ' golfers within £' + R.budget + 'm and choose a captain. Your team is linked to your member profile and goes straight into the league.' %></p>
+      <% if (lk.text) { %><p class="hint" id="fl-my-team-until" style="font-weight:700">Changes allowed until <%= lk.text %> (UK time), the first tee time of the season.</p><% } %>
+    <% } %>
   </section>
   <% } %>
   <% if (prices && prices.players.length) { %>

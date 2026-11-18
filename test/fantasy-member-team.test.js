@@ -104,3 +104,44 @@ test('members can only edit their own team; admin pages stay closed; admin tools
   assert.equal(mine(s.db, s.ids.a).length, 0);
   assert.equal(old(s.db), s.old);
 });
+
+// ---- the member lock: first tee time of the season's earliest event (London time), read from the calendar ----
+const LOCK = require('../src/lib/fantasy-lock');
+const season2027 = (db) => db.prepare("INSERT INTO seasons(name,year,start_date,end_date) VALUES ('2027',2027,'2027-01-01','2027-12-31')").run().lastInsertRowid;
+const ev = (db, sid, date, tee, status = 'scheduled', title = 'Opener') => db.prepare('INSERT INTO events(season_id,title,event_date,tee_time,status) VALUES (?,?,?,?,?)').run(sid, title, date, tee, status).lastInsertRowid;
+
+test('memberLock: earliest non-cancelled event, its first tee time; no tee time = start of day; no event = open', () => {
+  const { db } = seedDemoPlusEvents();
+  assert.deepEqual(LOCK.memberLock(db, 2027, '2030-01-01T00:00'), { at: null, text: '', locked: false, event: null }, 'no 2027 event: open');
+  const sid = season2027(db);
+  ev(db, sid, '2027-06-12', '09:00', 'scheduled', 'Later'); ev(db, sid, '2027-01-02', '08:00', 'cancelled', 'Called off'); const first = ev(db, sid, '2027-01-30', '10:16', 'scheduled', 'First');
+  const l = LOCK.memberLock(db, 2027, '2027-01-30T10:15');
+  assert.equal(l.at, '2027-01-30T10:16'); assert.equal(l.text, 'Sat 30 Jan 2027, 10:16'); assert.equal(l.event.id, first); assert.equal(l.locked, false);
+  assert.equal(LOCK.memberLock(db, 2027, '2027-01-30T10:16').locked, true);
+  ev(db, sid, '2027-01-23', '', 'scheduled', 'No time');
+  assert.equal(LOCK.memberLock(db, 2027, '2027-01-22T23:59').at, '2027-01-23T00:00');
+  assert.equal(LOCK.memberLock(db, 2027, '2027-01-23T00:00').locked, true);
+});
+
+test('member lock in the app: saves before the first tee time, refused (server-side) after; admin tools unaffected', async (t) => {
+  const s = await setup(); t.after(s.close);
+  const sid = season2027(s.db); const e = ev(s.db, sid, '2099-01-30', '10:16');
+  const c = await s.login('player1'); const five = s.cheap(5);
+  assert.match((await c.get('/fantasy-league')).text_, /Changes allowed until Fri 30 Jan 2099, 10:16 \(UK time\)/);
+  assert.equal((await save(c, { team_name: 'Before Lock', picks: five, captain: five[0] })).status, 302);
+  s.db.prepare("UPDATE events SET event_date='2020-01-30' WHERE id=?").run(e);
+  const page = (await c.get('/fantasy-league')).text_; assert.match(page, /id="fl-my-team-locked"/); assert.doesNotMatch(page, /id="fl-my-team-btn"/);
+  const g = await c.get('/fantasy-league/my-team'); assert.equal(g.status, 200); assert.match(g.text_, /id="fl-locked"/); assert.match(g.text_, /Before Lock/);
+  const before = JSON.stringify(s.db.prepare('SELECT * FROM fantasy_teams ORDER BY id').all());
+  const r = await post(c, '/fantasy-league/my-team', { _csrf: await tok(c, '/fantasy-league'), team_name: 'After Lock', picks: five, captain: five[1] });
+  assert.equal(r.status, 403); assert.equal(JSON.stringify(s.db.prepare('SELECT * FROM fantasy_teams ORDER BY id').all()), before);
+  const b = await s.login('player2');
+  assert.equal((await post(b, '/fantasy-league/my-team', { _csrf: await tok(b, '/fantasy-league'), team_name: 'Late Comer', picks: five, captain: five[0] })).status, 403);
+  assert.equal(mine(s.db, s.ids.b).length, 0);
+  const adm = new Client(s.app.base); assert.equal((await adm.login('pa@t.example')).status, 302);
+  const teamA = mine(s.db, s.ids.a)[0];
+  assert.equal((await post(adm, `/fantasy-league/admin/teams/${teamA.id}/delete`, { _csrf: await tok(adm, '/fantasy-league') })).status, 302);
+  assert.equal(mine(s.db, s.ids.a).length, 0, 'the admin can still remove a team after the lock');
+  s.db.prepare('DELETE FROM events WHERE id=?').run(e);
+  assert.equal((await save(c, { team_name: 'No Events', picks: five, captain: five[0] })).status, 302);
+});

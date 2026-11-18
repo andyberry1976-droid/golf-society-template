@@ -164,7 +164,7 @@ function fantasyPage(req, res, extra = {}) {
   const shown = prices || added ? { season, basedOn: prices && prices.basedOn, method: prices && prices.method, players: FA.pool(db, season, prices) } : null;
   const isAdmin = !!(req.user && req.user.role === 'admin');
   const teams = FA.teams(db, season);
-  const myTeam = req.user && season === require('../lib/fantasy').MEMBER_TEAM_SEASON ? { team: teams.find((t) => t.user_id === req.user.id) || null } : null;
+  const myTeam = req.user && season === require('../lib/fantasy').MEMBER_TEAM_SEASON ? { team: teams.find((t) => t.user_id === req.user.id) || null, lock: require('../lib/fantasy-lock').memberLock(db, season) } : null;
   res.render('fantasy', {
     myTeam,
     title: 'Fantasy League', active: 'fantasy', R, PP, prices: shown, teams, isAdmin, season, ml: teams.length ? require('../lib/fantasy').monthly(db, season, teams, R, PP) : null,
@@ -204,8 +204,9 @@ function memberTarget(req, res) {
   const db = req.app.locals.db; const base = fantasyBase(req);
   if (base.season !== require('../lib/fantasy').MEMBER_TEAM_SEASON) { res.status(404).render('error', { title: 'Not found', code: 404, message: 'Picking your own team is only available for the 2027 Fantasy League.' }); return null; }
   const row = db.prepare('SELECT id FROM fantasy_teams WHERE season=? AND user_id=? ORDER BY id LIMIT 1').get(base.season, req.user.id);
-  return { ...base, team: row ? require('../lib/fantasy-admin').getTeam(db, base.season, row.id) : null };
+  return { ...base, team: row ? require('../lib/fantasy-admin').getTeam(db, base.season, row.id) : null, lock: require('../lib/fantasy-lock').memberLock(db, base.season) };
 }
+const lockedPage = (req, res, t, status = 200) => res.status(status).render('fantasy-my-team-locked', { title: 'Teams locked', active: 'fantasy', season: t.season, team: t.team, lock: t.lock });
 function myTeamPage(req, res, t, { values = null, errors = {} } = {}) {
   const players = require('../lib/fantasy-admin').pool(req.app.locals.db, t.season, t.prices);
   const v = values || (t.team ? { team_name: t.team.team_name, slots: t.team.picks.map((p) => p.name), captain: t.team.captain } : {});
@@ -213,10 +214,12 @@ function myTeamPage(req, res, t, { values = null, errors = {} } = {}) {
 }
 router.get('/fantasy-league/my-team', requireLogin, wrap((req, res) => {
   const t = memberTarget(req, res); if (!t) return;
+  if (t.lock.locked) return lockedPage(req, res, t); // locks at the season's first tee time
   myTeamPage(req, res, t);
 }));
 router.post('/fantasy-league/my-team', requireLogin, wrap((req, res) => {
   const t = memberTarget(req, res); if (!t) return;
+  if (t.lock.locked) return lockedPage(req, res, t, 403); // enforced here, not just in the page
   const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { R, prices, season } = t;
   const body = { user_id: String(req.user.id), manager_name: t.team ? t.team.manager_name : '', team_name: req.body.team_name, picks: req.body.picks, captain: req.body.captain };
   const r = t.team ? FA.updateTeam(db, season, t.team.id, body, prices, R, { requireMember: true }) : FA.addTeam(db, season, body, prices, R, req.user.id, { requireMember: true });
