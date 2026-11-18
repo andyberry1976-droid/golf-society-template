@@ -119,4 +119,6 @@ function monthly(db, season, teams, R = RULES, places = PLACE_POINTS) {
   grid.forEach((g, i) => { g.tied = grid.some((o, j) => j !== i && o.pos === g.pos); });
   return { months, grid, squads, scored: played.size > 0 };
 }
-module.exports = { PLACE_POINTS, RULES, placePoints, simulate, price, rulesFrom, livePrices, eventPoints, seasonMonths, monthly };
+// Logged-in members may pick (and change) their own team only for this Fantasy League season.
+const MEMBER_TEAM_SEASON = 2027;
+module.exports = { MEMBER_TEAM_SEASON, PLACE_POINTS, RULES, placePoints, simulate, price, rulesFrom, livePrices, eventPoints, seasonMonths, monthly };

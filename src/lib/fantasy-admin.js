@@ -2,7 +2,8 @@
 /**
  * Fantasy League admin tools: add golfers to the pickable pool (with a price) and enter a manager's team on their behalf.
  * Same rules as the published Fantasy League: a squad of R.squad golfers, total cost within £R.budget m, one captain
- * (scores double), no free transfer (a team, once entered, is only changed by an admin deleting and re-entering it).
+ * (scores double), no free transfer (a team, once entered, is only changed by an admin editing it, or by its own
+ * member on My team while that is open).
  */
 const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ');
 const key = (s) => norm(s).toLowerCase();
@@ -49,9 +50,13 @@ function removePlayer(db, season, id) {
   return { ok: true, row: p };
 }
 
-/** Enter a team on a manager's behalf. body: manager_name, team_name, user_id (optional), picks (names), captain. */
-function addTeam(db, season, body, base, R, by = null) {
-  const errors = {};
+/**
+ * Check a team against the rules. body: manager_name, team_name, user_id (optional), picks (names), captain.
+ * opts.id = the team being edited (it may keep its own name/member); opts.requireMember = the team must belong to a member.
+ * Returns { ok, errors, values, picks, cost, cap, uid }.
+ */
+function checkTeam(db, season, body, base, R, opts = {}) {
+  const errors = {}; const self = opts.id || 0;
   const arr = (v) => (Array.isArray(v) ? v : v == null || v === '' ? [] : [v]).map(norm).filter(Boolean);
   const values = { manager_name: norm(body.manager_name), team_name: norm(body.team_name), user_id: String(body.user_id || '').trim(), picks: arr(body.picks), captain: norm(body.captain) };
   values.slots = (Array.isArray(body.picks) ? body.picks : body.picks == null ? [] : [body.picks]).map(norm);
@@ -59,11 +64,11 @@ function addTeam(db, season, body, base, R, by = null) {
   if (values.user_id) {
     uid = Number(values.user_id); const u = Number.isInteger(uid) && uid > 0 ? db.prepare('SELECT id, name FROM users WHERE id=?').get(uid) : null;
     if (!u) errors.user_id = 'Pick a member from the list'; else if (!values.manager_name) values.manager_name = u.name;
-  }
-  if (values.manager_name.length < 2 || values.manager_name.length > 60) errors.manager_name = 'Manager name must be 2–60 characters (or pick a member)';
+  } else if (opts.requireMember) errors.user_id = 'Pick the member this team belongs to';
+  if (!errors.user_id && (values.manager_name.length < 2 || values.manager_name.length > 60)) errors.manager_name = 'Manager name must be 2–60 characters (or pick a member)';
   if (values.team_name.length < 2 || values.team_name.length > 40) errors.team_name = 'Team name must be 2–40 characters';
-  else if (db.prepare('SELECT 1 FROM fantasy_teams WHERE season=? AND team_name=? COLLATE NOCASE').get(season, values.team_name)) errors.team_name = 'That team name is taken';
-  if (!errors.user_id && uid && db.prepare('SELECT 1 FROM fantasy_teams WHERE season=? AND user_id=?').get(season, uid)) errors.user_id = 'That member already has a team';
+  else if (db.prepare('SELECT 1 FROM fantasy_teams WHERE season=? AND team_name=? COLLATE NOCASE AND id<>?').get(season, values.team_name, self)) errors.team_name = 'That team name is taken';
+  if (!errors.user_id && uid && db.prepare('SELECT 1 FROM fantasy_teams WHERE season=? AND user_id=? AND id<>?').get(season, uid, self)) errors.user_id = 'That member already has a team';
   const P = pool(db, season, base); const byName = new Map(P.map((p) => [key(p.name), p]));
   const picks = [];
   for (const n of values.picks) { const p = byName.get(key(n)); if (!p) { errors.picks = `${n} isn’t in the player pool`; break; } if (picks.some((x) => x.name === p.name)) { errors.picks = `${p.name} is picked twice`; break; } picks.push({ name: p.name, user_id: p.user_id || null, price: p.price }); }
@@ -73,10 +78,32 @@ function addTeam(db, season, body, base, R, by = null) {
   const cap = picks.find((p) => key(p.name) === key(values.captain));
   if (!values.captain) errors.captain = `Pick a captain: choose one of your ${R.squad} players (they score double)`;
   else if (!cap) errors.captain = `Pick a captain from the squad: ${values.captain} isn’t one of your ${R.squad} players`;
-  if (Object.keys(errors).length) return { ok: false, errors, values };
+  return { ok: !Object.keys(errors).length, errors, values, picks, cost, cap, uid };
+}
+
+/** Enter a team on a manager's behalf. Returns { ok, errors, values, row }. */
+function addTeam(db, season, body, base, R, by = null, opts = {}) {
+  const c = checkTeam(db, season, body, base, R, opts);
+  if (!c.ok) return { ok: false, errors: c.errors, values: c.values };
   const info = db.prepare('INSERT INTO fantasy_teams(season,manager_name,team_name,user_id,picks,captain,created_by) VALUES (?,?,?,?,?,?,?)')
-    .run(season, values.manager_name, values.team_name, uid, JSON.stringify(picks), cap.name, by);
-  return { ok: true, row: { id: info.lastInsertRowid, ...values, captain: cap.name, picks, cost } };
+    .run(season, c.values.manager_name, c.values.team_name, c.uid, JSON.stringify(c.picks), c.cap.name, by);
+  return { ok: true, row: { id: info.lastInsertRowid, ...c.values, captain: c.cap.name, picks: c.picks, cost: c.cost } };
+}
+
+/** One team of this season, with parsed picks and cost (or null). */
+function getTeam(db, season, id) {
+  return teams(db, season).find((t) => t.id === Number(id)) || null;
+}
+
+/** Admin edit of a team (same rules as entering one; picks are re-priced from the current pool). */
+function updateTeam(db, season, id, body, base, R, opts = {}) {
+  const t = getTeam(db, season, id);
+  if (!t) return { ok: false, missing: true, errors: { team: 'No such team.' }, values: {} };
+  const c = checkTeam(db, season, body, base, R, { ...opts, id: t.id });
+  if (!c.ok) return { ok: false, errors: c.errors, values: c.values };
+  db.prepare('UPDATE fantasy_teams SET manager_name=?, team_name=?, user_id=?, picks=?, captain=? WHERE id=?')
+    .run(c.values.manager_name, c.values.team_name, c.uid, JSON.stringify(c.picks), c.cap.name, t.id);
+  return { ok: true, before: t, row: { id: t.id, ...c.values, captain: c.cap.name, picks: c.picks, cost: c.cost } };
 }
 
 function removeTeam(db, season, id) {
@@ -86,4 +113,4 @@ function removeTeam(db, season, id) {
   return { ok: true, row: t };
 }
 
-module.exports = { pool, teams, addPlayer, removePlayer, addTeam, removeTeam };
+module.exports = { pool, teams, addPlayer, removePlayer, checkTeam, addTeam, getTeam, updateTeam, removeTeam };

@@ -1,0 +1,24 @@
+<%- include('partials/head') %>
+<% const er = errors || {}; const v = values || {}; const slots = v.slots || v.picks || []; %>
+<% if (Object.keys(er).length) { %>
+<div class="flashes"><div class="wrap"><div class="flash err" role="alert" id="fl-not-saved"><strong>Not saved:</strong> <%= Object.values(er).join(' · ') %>.</div></div></div>
+<% } %>
+<%- include('partials/pagehero', {eyebrow: 'Fantasy League ' + season, heading: team ? 'Change my team' : 'Pick my team', lead: 'Name your team, pick ' + R.squad + ' golfers within £' + R.budget + 'm and choose a captain (scores double).', doodle: 's-flag'}) %>
+<div class="page-body"><div class="wrap lift stack" style="max-width:760px">
+  <form class="form card" id="fb" method="post" action="/fantasy-league/my-team" novalidate><%- include('partials/csrf') %>
+    <p class="hint">Signed in as <strong><%= user.name %></strong>. <%= team ? 'This team is in the league: your changes go live as soon as you save.' : 'Your team is linked to your member profile and goes straight into the league. One team per member.' %></p>
+    <div class="fld"><label for="fb-name">Team name</label>
+      <input class="in" id="fb-name" name="team_name" maxlength="40" required value="<%= v.team_name || '' %>"<%- er.team_name ? ' aria-describedby="fb-name-e" aria-invalid="true"' : '' %>>
+      <% if (er.team_name) { %><p class="ferr" id="fb-name-e" role="alert"><%= er.team_name %></p><% } %></div>
+    <div class="cols3">
+      <% for (var i = 0; i < R.squad; i++) { %><div class="fld"><label for="fb-p<%= i %>">Pick <%= i + 1 %></label><select class="in" id="fb-p<%= i %>" name="picks"><option value="">—</option><% players.forEach(function(p){ %><option value="<%= p.name %>"<%= slots[i]===p.name ? ' selected' : '' %>><%= p.name %> · £<%= p.price.toFixed(1) %>m</option><% }) %></select></div><% } %>
+      <div class="fld"><label for="fb-cap">Captain (scores double)</label><select class="in" id="fb-cap" name="captain"><option value="">—</option><% players.forEach(function(p){ %><option value="<%= p.name %>"<%= v.captain===p.name ? ' selected' : '' %>><%= p.name %></option><% }) %></select>
+        <% if (er.captain) { %><p class="ferr" role="alert"><%= er.captain %></p><% } %></div>
+    </div>
+    <% if (er.picks) { %><p class="ferr" role="alert"><%= er.picks %></p><% } %>
+    <% if (er.user_id) { %><p class="ferr" role="alert"><%= er.user_id %></p><% } %>
+    <p class="hint">Exactly <%= R.squad %> different players, total £<%= R.budget %>m or less. The captain must be one of your picks.</p>
+    <p><button class="btn btn-pk" id="fb-save"><%= team ? 'Save my team' : 'Enter my team' %></button> <a class="btn btn-wh" href="/fantasy-league">Cancel</a></p>
+  </form>
+</div></div>
+<%- include('partials/foot') %>

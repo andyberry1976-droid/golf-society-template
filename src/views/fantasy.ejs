@@ -4,6 +4,14 @@
 <% } %>
 <%- include('partials/pagehero', {eyebrow: 'Coming in 2027', heading: 'Fantasy League', lead: 'You’ve spent years slagging off everyone’s golf. Now put your money where your mouth is.', doodle: 's-flag'}) %>
 <div class="page-body"><div class="wrap lift stack">
+  <% if (typeof myTeam !== 'undefined' && myTeam) { const mt = myTeam.team; %>
+  <section class="card" aria-labelledby="fl-my-team" id="fl-my-team-card"><h2 id="fl-my-team">My team</h2>
+    <% if (mt) { %><p style="margin-top:8px;font-weight:700"><strong><%= mt.team_name %></strong> · £<%= mt.cost.toFixed(1) %>m</p>
+      <p style="margin-top:6px"><%= mt.picks.map(function(p){ return p.name + (p.name === mt.captain ? ' (C)' : ''); }).join(', ') %></p><% } %>
+    <p style="margin-top:12px"><a class="btn btn-pk" href="/fantasy-league/my-team" id="fl-my-team-btn"><%= mt ? 'Change my team' : 'Pick my team' %></a></p>
+    <p class="hint"><%= mt ? 'Only you (and the admin) can change your team.' : 'Pick ' + R.squad + ' golfers within £' + R.budget + 'm and choose a captain. Your team is linked to your member profile and goes straight into the league.' %></p>
+  </section>
+  <% } %>
   <% if (prices && prices.players.length) { %>
   <section class="card" aria-labelledby="fl-pr"><h2 id="fl-pr">Player prices for <%= prices.season %></h2>
     <% if (prices.basedOn) { %><p style="margin-top:8px;font-weight:700">Based on how everyone would have scored in <%= prices.basedOn %> under the rules below. Top five combined? Dream on.</p><% } %>

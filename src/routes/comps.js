@@ -6,7 +6,7 @@ const comps = require('../lib/comps');
 const Soc = require('../lib/society');
 const CompPrizes = require('../lib/comp-prizes');
 const { tournamentBoard } = require('../lib/engine');
-const { wrap } = require('../lib/guards');
+const { wrap, requireLogin } = require('../lib/guards');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -164,7 +164,9 @@ function fantasyPage(req, res, extra = {}) {
   const shown = prices || added ? { season, basedOn: prices && prices.basedOn, players: FA.pool(db, season, prices) } : null;
   const isAdmin = !!(req.user && req.user.role === 'admin');
   const teams = FA.teams(db, season);
+  const myTeam = req.user && season === require('../lib/fantasy').MEMBER_TEAM_SEASON ? { team: teams.find((t) => t.user_id === req.user.id) || null } : null;
   res.render('fantasy', {
+    myTeam,
     title: 'Fantasy League', active: 'fantasy', R, PP, prices: shown, teams, isAdmin, season, ml: teams.length ? require('../lib/fantasy').monthly(db, season, teams, R, PP) : null,
     fa: isAdmin ? { season, members: db.prepare("SELECT id, name FROM users WHERE status='active' ORDER BY name").all(), errors: {}, values: {}, form: null, ...extra } : null,
   });
@@ -195,6 +197,35 @@ router.post('/fantasy-league/admin/teams', faAdmin, wrap((req, res) => {
   const r = FA.addTeam(db, season, req.body, prices, R, req.user.id);
   if (r.ok) q.audit(db, req.user.id, 'fantasy_add_team', `${season}: "${r.row.team_name}" (${r.row.manager_name}) ${r.row.picks.map((p) => p.name).join(', ')}; captain ${r.row.captain}; £${r.row.cost}m`);
   faDone(req, res, r, r.ok && `Entered “${r.row.team_name}” for ${r.row.manager_name} (£${r.row.cost}m, captain ${r.row.captain}).`, 'team');
+}));
+// ---- Fantasy League: a logged-in member picks ONE team linked to their own profile (2027 season only) ----
+// Same rules and validation as admin-entered teams (FA.checkTeam). The team is always their own (no team id in the URL).
+function memberTarget(req, res) {
+  const db = req.app.locals.db; const base = fantasyBase(req);
+  if (base.season !== require('../lib/fantasy').MEMBER_TEAM_SEASON) { res.status(404).render('error', { title: 'Not found', code: 404, message: 'Picking your own team is only available for the 2027 Fantasy League.' }); return null; }
+  const row = db.prepare('SELECT id FROM fantasy_teams WHERE season=? AND user_id=? ORDER BY id LIMIT 1').get(base.season, req.user.id);
+  return { ...base, team: row ? require('../lib/fantasy-admin').getTeam(db, base.season, row.id) : null };
+}
+function myTeamPage(req, res, t, { values = null, errors = {} } = {}) {
+  const players = require('../lib/fantasy-admin').pool(req.app.locals.db, t.season, t.prices);
+  const v = values || (t.team ? { team_name: t.team.team_name, slots: t.team.picks.map((p) => p.name), captain: t.team.captain } : {});
+  res.render('fantasy-my-team', { title: t.team ? 'Change my team' : 'Pick my team', active: 'fantasy', R: t.R, season: t.season, players, team: t.team, values: v, errors });
+}
+router.get('/fantasy-league/my-team', requireLogin, wrap((req, res) => {
+  const t = memberTarget(req, res); if (!t) return;
+  myTeamPage(req, res, t);
+}));
+router.post('/fantasy-league/my-team', requireLogin, wrap((req, res) => {
+  const t = memberTarget(req, res); if (!t) return;
+  const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { R, prices, season } = t;
+  const body = { user_id: String(req.user.id), manager_name: t.team ? t.team.manager_name : '', team_name: req.body.team_name, picks: req.body.picks, captain: req.body.captain };
+  const r = t.team ? FA.updateTeam(db, season, t.team.id, body, prices, R, { requireMember: true }) : FA.addTeam(db, season, body, prices, R, req.user.id, { requireMember: true });
+  if (!r.ok) { res.status(422); return myTeamPage(req, res, t, { values: r.values, errors: r.errors }); }
+  const desc = `${r.row.picks.map((p) => p.name).join(', ')}; captain ${r.row.captain}; £${r.row.cost}m`;
+  if (t.team) q.audit(db, req.user.id, 'fantasy_member_edit_team', `${season}: team ${t.team.id} "${r.before.team_name}" -> "${r.row.team_name}" by its member; ${desc}`);
+  else q.audit(db, req.user.id, 'fantasy_member_add_team', `${season}: team ${r.row.id} "${r.row.team_name}" (${r.row.manager_name}) by the member; ${desc}`);
+  req.flash('ok', `${t.team ? 'Saved' : 'Entered'} “${r.row.team_name}” (£${r.row.cost}m, captain ${r.row.captain}). It’s live in the league.`);
+  res.redirect('/fantasy-league#fl-my-team');
 }));
 router.post('/fantasy-league/admin/teams/:id(\\d+)/delete', faAdmin, wrap((req, res) => {
   const db = req.app.locals.db; const FA = require('../lib/fantasy-admin'); const { season } = fantasyBase(req);
